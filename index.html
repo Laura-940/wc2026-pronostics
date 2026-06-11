@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>⚽ WC2026 Pronostics</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f8f9fa;--surface:#fff;--border:#e5e7eb;--text:#111827;--muted:#6b7280;
+  --accent:#185FA5;--accent2:#0C447C;--success:#059669;--sbg:#d1fae5;
+  --danger:#dc2626;--dbg:#fee2e2;--warn:#d97706;--wbg:#fef3c7;
+  --r:10px;--rs:6px;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.app{max-width:680px;margin:0 auto;padding:0 16px 90px}
+
+/* HEADER */
+.hdr{padding:18px 0 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);margin-bottom:18px}
+.hdr h1{font-size:17px;font-weight:600}
+.hdr p{font-size:11px;color:var(--muted)}
+.ubar{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.uchip{display:flex;align-items:center;gap:8px}
+.av{width:32px;height:32px;border-radius:50%;background:#dbeafe;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--accent);flex-shrink:0}
+
+/* TABS */
+.tabs{display:flex;gap:3px;background:#f3f4f6;padding:4px;border-radius:var(--r);margin-bottom:18px}
+.tab{flex:1;padding:7px 4px;border:none;background:transparent;cursor:pointer;font-size:12px;border-radius:var(--rs);color:var(--muted);transition:all .15s;font-family:inherit;white-space:nowrap}
+.tab.on{background:#fff;color:var(--text);font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.1)}
+
+/* CARDS */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:13px 15px;margin-bottom:10px}
+
+/* MATCH */
+.mmeta{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px;flex-wrap:wrap;gap:4px}
+.mround{font-size:11px;color:var(--muted);background:#f3f4f6;padding:2px 8px;border-radius:20px}
+.mdate{font-size:11px;color:var(--muted)}
+.mteams{display:flex;align-items:center;gap:6px;margin-bottom:9px}
+.team{flex:1;text-align:center}
+.tf{font-size:22px;display:block;margin-bottom:2px}
+.tn{font-size:12px;font-weight:500}
+.vsb{text-align:center;min-width:68px}
+.sres{font-size:20px;font-weight:700;letter-spacing:2px}
+.vstxt{font-size:12px;color:var(--muted)}
+.pzone{display:flex;align-items:center;gap:7px;padding-top:9px;border-top:1px solid var(--border);flex-wrap:wrap}
+.sinp{width:44px;height:38px;text-align:center;font-size:17px;font-weight:600;border:1px solid var(--border);border-radius:var(--rs);background:#f9fafb;color:var(--text);font-family:inherit}
+.sinp:focus{outline:none;border-color:var(--accent);background:#fff}
+.sinp:disabled{opacity:.4;cursor:not-allowed}
+.sep{color:var(--muted);font-size:15px;font-weight:600}
+.pinfo{flex:1;text-align:right;font-size:12px;color:var(--muted)}
+.pinfo.hit{color:var(--success);font-weight:600}
+
+/* BUTTONS */
+.btn{padding:7px 14px;border:1px solid var(--border);border-radius:var(--rs);background:#fff;cursor:pointer;font-size:13px;color:var(--text);font-family:inherit;transition:all .15s}
+.btn:hover{background:#f3f4f6}
+.btn.pri{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn.pri:hover{background:var(--accent2);border-color:var(--accent2)}
+.btn.sm{padding:5px 10px;font-size:12px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+
+/* BADGES */
+.badge{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:500}
+.open{background:var(--sbg);color:var(--success)}
+.closed{background:var(--dbg);color:var(--danger)}
+.played{background:#e0e7ff;color:#3730a3}
+
+/* FILTERS */
+.filters{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:14px}
+.fbtn{padding:4px 11px;border:1px solid var(--border);border-radius:20px;background:#fff;cursor:pointer;font-size:12px;color:var(--muted);font-family:inherit;transition:all .15s}
+.fbtn.on{background:#dbeafe;color:var(--accent);border-color:#bfdbfe}
+
+/* LEADERBOARD */
+.lbrow{display:flex;align-items:center;gap:11px;padding:10px 0;border-bottom:1px solid var(--border)}
+.lbrow:last-child{border-bottom:none}
+.lbrank{font-size:18px;min-width:28px}
+.lbname{flex:1;font-size:14px;font-weight:500}
+.lbpts{font-size:16px;font-weight:700;color:var(--accent)}
+.lbsub{font-size:11px;color:var(--muted)}
+
+/* STATS */
+.sgrid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px;margin-bottom:14px}
+.scard{background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:11px;text-align:center}
+.sval{font-size:22px;font-weight:700;color:var(--accent)}
+.slbl{font-size:11px;color:var(--muted);margin-top:2px}
+
+/* LOGIN */
+.lw{max-width:360px;margin:30px auto}
+.lw h2{font-size:21px;font-weight:600;margin-bottom:6px}
+.lw .sub{font-size:14px;color:var(--muted);margin-bottom:18px}
+.fg{margin-bottom:11px}
+.fg label{display:block;font-size:11px;font-weight:600;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em}
+input[type=text],input[type=password]{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:var(--rs);font-size:15px;font-family:inherit;background:#fff;color:var(--text)}
+input:focus{outline:none;border-color:var(--accent)}
+.err{padding:9px 13px;background:var(--dbg);color:var(--danger);border-radius:var(--rs);font-size:13px;margin-bottom:11px}
+
+/* MISC */
+.empty{text-align:center;padding:40px 20px;color:var(--muted)}
+.ei{font-size:38px;margin-bottom:10px}
+.loading{text-align:center;padding:20px;color:var(--muted);font-size:14px}
+.spin{display:inline-block;width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:sp .7s linear infinite;vertical-align:middle;margin-right:6px}
+@keyframes sp{to{transform:rotate(360deg)}}
+.toast{position:fixed;top:18px;right:18px;padding:9px 15px;border-radius:var(--rs);font-size:13px;font-weight:500;z-index:999;animation:ti .2s ease}
+.ts{background:var(--success);color:#fff}
+.te{background:var(--danger);color:#fff}
+@keyframes ti{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+.note{font-size:12px;color:var(--muted);padding:8px 12px;background:#f9fafb;border-radius:var(--rs);margin-bottom:12px}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+// ─── CONFIG (token injecté par GitHub Actions) ───────────────
+const AT_TOKEN = '__AIRTABLE_TOKEN__';
+const BASE_ID  = 'app6kZ7JVeTWarmFR';
+const PWD      = 'allez2026';
+const AT       = 'https://api.airtable.com/v0/' + BASE_ID + '/';
+
+// ─── FLAGS ───────────────────────────────────────────────────
+const FL = {
+  'Mexico':'🇲🇽','South Africa':'🇿🇦','South Korea':'🇰🇷','Czech Republic':'🇨🇿',
+  'USA':'🇺🇸','Canada':'🇨🇦','Panama':'🇵🇦','Venezuela':'🇻🇪',
+  'Spain':'🇪🇸','China':'🇨🇳','Morocco':'🇲🇦','Chile':'🇨🇱',
+  'Brazil':'🇧🇷','Ecuador':'🇪🇨','Colombia':'🇨🇴','Paraguay':'🇵🇾',
+  'Germany':'🇩🇪','Saudi Arabia':'🇸🇦','Belgium':'🇧🇪','New Zealand':'🇳🇿',
+  'Argentina':'🇦🇷','Albania':'🇦🇱','Peru':'🇵🇪','Australia':'🇦🇺',
+  'France':'🇫🇷','Honduras':'🇭🇳','Poland':'🇵🇱','Austria':'🇦🇹',
+  'Netherlands':'🇳🇱','Nigeria':'🇳🇬','Ukraine':'🇺🇦','Cuba':'🇨🇺',
+  'England':'🏴󠁧󠁢󠁥󠁮󠁧󠁿','Serbia':'🇷🇸','Denmark':'🇩🇰','Tunisia':'🇹🇳',
+  'Italy':'🇮🇹','Iran':'🇮🇷','Portugal':'🇵🇹','Uzbekistan':'🇺🇿',
+  'DR Congo':'🇨🇩','Turkey':'🇹🇷','Senegal':'🇸🇳',
+};
+const ff = t => FL[t]||'🏳️';
+
+// ─── MATCHS ──────────────────────────────────────────────────
+const M = [
+  {id:'m001',g:'A',date:'2026-06-11',time:'19:00',tz:-6,t1:'Mexico',t2:'South Africa',v:'Mexico City'},
+  {id:'m002',g:'A',date:'2026-06-11',time:'02:00',tz:-6,t1:'South Korea',t2:'Czech Republic',v:'Guadalajara'},
+  {id:'m003',g:'A',date:'2026-06-18',time:'12:00',tz:-4,t1:'Czech Republic',t2:'South Africa',v:'Atlanta'},
+  {id:'m004',g:'A',date:'2026-06-18',time:'19:00',tz:-6,t1:'Mexico',t2:'South Korea',v:'Guadalajara'},
+  {id:'m005',g:'A',date:'2026-06-25',time:'18:00',tz:-6,t1:'South Africa',t2:'South Korea',v:'Mexico City'},
+  {id:'m006',g:'A',date:'2026-06-25',time:'18:00',tz:-6,t1:'Mexico',t2:'Czech Republic',v:'Guadalajara'},
+  {id:'m007',g:'B',date:'2026-06-12',time:'16:00',tz:-5,t1:'USA',t2:'Panama',v:'SoFi Stadium'},
+  {id:'m008',g:'B',date:'2026-06-12',time:'22:00',tz:-5,t1:'Canada',t2:'Venezuela',v:'Gillette'},
+  {id:'m009',g:'B',date:'2026-06-19',time:'16:00',tz:-5,t1:'USA',t2:'Canada',v:'SoFi Stadium'},
+  {id:'m010',g:'B',date:'2026-06-19',time:'22:00',tz:-5,t1:'Panama',t2:'Venezuela',v:'Dallas'},
+  {id:'m011',g:'B',date:'2026-06-26',time:'22:00',tz:-5,t1:'Canada',t2:'Panama',v:'Toronto'},
+  {id:'m012',g:'B',date:'2026-06-26',time:'22:00',tz:-5,t1:'Venezuela',t2:'USA',v:'Dallas'},
+  {id:'m013',g:'C',date:'2026-06-12',time:'13:00',tz:-6,t1:'Spain',t2:'China',v:'Mexico City'},
+  {id:'m014',g:'C',date:'2026-06-12',time:'19:00',tz:-5,t1:'Morocco',t2:'Chile',v:'Dallas'},
+  {id:'m015',g:'C',date:'2026-06-19',time:'13:00',tz:-6,t1:'Spain',t2:'Morocco',v:'Mexico City'},
+  {id:'m016',g:'C',date:'2026-06-19',time:'19:00',tz:-5,t1:'China',t2:'Chile',v:'Dallas'},
+  {id:'m017',g:'C',date:'2026-06-26',time:'18:00',tz:-5,t1:'Chile',t2:'Spain',v:'Dallas'},
+  {id:'m018',g:'C',date:'2026-06-26',time:'18:00',tz:-5,t1:'China',t2:'Morocco',v:'Kansas City'},
+  {id:'m019',g:'D',date:'2026-06-13',time:'13:00',tz:-5,t1:'Brazil',t2:'Ecuador',v:'Houston'},
+  {id:'m020',g:'D',date:'2026-06-13',time:'19:00',tz:-5,t1:'Colombia',t2:'Paraguay',v:'Miami'},
+  {id:'m021',g:'D',date:'2026-06-20',time:'13:00',tz:-5,t1:'Brazil',t2:'Colombia',v:'Houston'},
+  {id:'m022',g:'D',date:'2026-06-20',time:'19:00',tz:-5,t1:'Ecuador',t2:'Paraguay',v:'Miami'},
+  {id:'m023',g:'D',date:'2026-06-27',time:'18:00',tz:-5,t1:'Paraguay',t2:'Brazil',v:'Miami'},
+  {id:'m024',g:'D',date:'2026-06-27',time:'18:00',tz:-5,t1:'Ecuador',t2:'Colombia',v:'Houston'},
+  {id:'m025',g:'E',date:'2026-06-13',time:'16:00',tz:-5,t1:'Germany',t2:'Saudi Arabia',v:'Philadelphia'},
+  {id:'m026',g:'E',date:'2026-06-13',time:'22:00',tz:-4,t1:'Belgium',t2:'New Zealand',v:'New York'},
+  {id:'m027',g:'E',date:'2026-06-20',time:'16:00',tz:-5,t1:'Germany',t2:'Belgium',v:'Philadelphia'},
+  {id:'m028',g:'E',date:'2026-06-20',time:'22:00',tz:-4,t1:'Saudi Arabia',t2:'New Zealand',v:'New York'},
+  {id:'m029',g:'E',date:'2026-06-27',time:'18:00',tz:-4,t1:'New Zealand',t2:'Germany',v:'New York'},
+  {id:'m030',g:'E',date:'2026-06-27',time:'18:00',tz:-5,t1:'Saudi Arabia',t2:'Belgium',v:'Philadelphia'},
+  {id:'m031',g:'F',date:'2026-06-14',time:'13:00',tz:-4,t1:'Argentina',t2:'Albania',v:'New York'},
+  {id:'m032',g:'F',date:'2026-06-14',time:'19:00',tz:-5,t1:'Peru',t2:'Australia',v:'Dallas'},
+  {id:'m033',g:'F',date:'2026-06-21',time:'13:00',tz:-4,t1:'Argentina',t2:'Peru',v:'New York'},
+  {id:'m034',g:'F',date:'2026-06-21',time:'19:00',tz:-5,t1:'Albania',t2:'Australia',v:'Dallas'},
+  {id:'m035',g:'F',date:'2026-06-28',time:'18:00',tz:-5,t1:'Australia',t2:'Argentina',v:'Dallas'},
+  {id:'m036',g:'F',date:'2026-06-28',time:'18:00',tz:-4,t1:'Albania',t2:'Peru',v:'New York'},
+  {id:'m037',g:'G',date:'2026-06-14',time:'16:00',tz:-4,t1:'France',t2:'Honduras',v:'Boston'},
+  {id:'m038',g:'G',date:'2026-06-14',time:'22:00',tz:-5,t1:'Poland',t2:'Austria',v:'Kansas City'},
+  {id:'m039',g:'G',date:'2026-06-21',time:'16:00',tz:-4,t1:'France',t2:'Poland',v:'Boston'},
+  {id:'m040',g:'G',date:'2026-06-21',time:'22:00',tz:-5,t1:'Honduras',t2:'Austria',v:'Kansas City'},
+  {id:'m041',g:'G',date:'2026-06-28',time:'18:00',tz:-4,t1:'Austria',t2:'France',v:'Boston'},
+  {id:'m042',g:'G',date:'2026-06-28',time:'18:00',tz:-5,t1:'Honduras',t2:'Poland',v:'Kansas City'},
+  {id:'m043',g:'H',date:'2026-06-15',time:'13:00',tz:-6,t1:'Netherlands',t2:'Nigeria',v:'Guadalajara'},
+  {id:'m044',g:'H',date:'2026-06-15',time:'19:00',tz:-5,t1:'Ukraine',t2:'Cuba',v:'Houston'},
+  {id:'m045',g:'H',date:'2026-06-22',time:'13:00',tz:-6,t1:'Netherlands',t2:'Ukraine',v:'Guadalajara'},
+  {id:'m046',g:'H',date:'2026-06-22',time:'19:00',tz:-5,t1:'Nigeria',t2:'Cuba',v:'Houston'},
+  {id:'m047',g:'H',date:'2026-06-29',time:'18:00',tz:-6,t1:'Cuba',t2:'Netherlands',v:'Guadalajara'},
+  {id:'m048',g:'H',date:'2026-06-29',time:'18:00',tz:-5,t1:'Nigeria',t2:'Ukraine',v:'Houston'},
+  {id:'m049',g:'I',date:'2026-06-15',time:'16:00',tz:-4,t1:'England',t2:'Serbia',v:'New York'},
+  {id:'m050',g:'I',date:'2026-06-15',time:'22:00',tz:-4,t1:'Denmark',t2:'Tunisia',v:'Philadelphia'},
+  {id:'m051',g:'I',date:'2026-06-22',time:'16:00',tz:-4,t1:'England',t2:'Denmark',v:'New York'},
+  {id:'m052',g:'I',date:'2026-06-22',time:'22:00',tz:-4,t1:'Serbia',t2:'Tunisia',v:'Philadelphia'},
+  {id:'m053',g:'I',date:'2026-06-29',time:'18:00',tz:-4,t1:'Tunisia',t2:'England',v:'Philadelphia'},
+  {id:'m054',g:'I',date:'2026-06-29',time:'18:00',tz:-4,t1:'Serbia',t2:'Denmark',v:'New York'},
+  {id:'m055',g:'J',date:'2026-06-16',time:'13:00',tz:-5,t1:'Italy',t2:'Ecuador',v:'Houston'},
+  {id:'m056',g:'J',date:'2026-06-16',time:'19:00',tz:-5,t1:'Venezuela',t2:'Iran',v:'Dallas'},
+  {id:'m057',g:'J',date:'2026-06-23',time:'13:00',tz:-5,t1:'Italy',t2:'Venezuela',v:'Houston'},
+  {id:'m058',g:'J',date:'2026-06-23',time:'19:00',tz:-5,t1:'Ecuador',t2:'Iran',v:'Dallas'},
+  {id:'m059',g:'J',date:'2026-06-30',time:'18:00',tz:-5,t1:'Iran',t2:'Italy',v:'Dallas'},
+  {id:'m060',g:'J',date:'2026-06-30',time:'18:00',tz:-5,t1:'Ecuador',t2:'Venezuela',v:'Houston'},
+  {id:'m061',g:'K',date:'2026-06-16',time:'16:00',tz:-4,t1:'Portugal',t2:'Uzbekistan',v:'Atlanta'},
+  {id:'m062',g:'K',date:'2026-06-16',time:'22:00',tz:-4,t1:'DR Congo',t2:'Colombia',v:'Atlanta'},
+  {id:'m063',g:'K',date:'2026-06-23',time:'16:00',tz:-4,t1:'Portugal',t2:'DR Congo',v:'Atlanta'},
+  {id:'m064',g:'K',date:'2026-06-23',time:'22:00',tz:-4,t1:'Uzbekistan',t2:'Colombia',v:'Atlanta'},
+  {id:'m065',g:'K',date:'2026-06-30',time:'18:00',tz:-4,t1:'Colombia',t2:'Portugal',v:'Atlanta'},
+  {id:'m066',g:'K',date:'2026-06-30',time:'18:00',tz:-4,t1:'Uzbekistan',t2:'DR Congo',v:'Atlanta'},
+  {id:'m067',g:'L',date:'2026-06-17',time:'13:00',tz:-5,t1:'Belgium',t2:'Colombia',v:'Kansas City'},
+  {id:'m068',g:'L',date:'2026-06-17',time:'19:00',tz:-4,t1:'Turkey',t2:'Senegal',v:'Boston'},
+  {id:'m069',g:'L',date:'2026-06-24',time:'13:00',tz:-5,t1:'Belgium',t2:'Turkey',v:'Kansas City'},
+  {id:'m070',g:'L',date:'2026-06-24',time:'19:00',tz:-4,t1:'Colombia',t2:'Senegal',v:'Boston'},
+  {id:'m071',g:'L',date:'2026-07-01',time:'18:00',tz:-5,t1:'Senegal',t2:'Belgium',v:'Kansas City'},
+  {id:'m072',g:'L',date:'2026-07-01',time:'18:00',tz:-4,t1:'Colombia',t2:'Turkey',v:'Boston'},
+  {id:'m073',g:'1/32',date:'2026-07-04',time:'14:00',tz:-4,t1:'1A',t2:'3D/E/F',v:'TBD'},
+  {id:'m074',g:'1/32',date:'2026-07-04',time:'20:00',tz:-4,t1:'1B',t2:'3A/C/D',v:'TBD'},
+  {id:'m075',g:'1/32',date:'2026-07-05',time:'14:00',tz:-5,t1:'1C',t2:'3H/I/J',v:'TBD'},
+  {id:'m076',g:'1/32',date:'2026-07-05',time:'20:00',tz:-5,t1:'1D',t2:'2B',v:'TBD'},
+  {id:'m077',g:'1/32',date:'2026-07-06',time:'14:00',tz:-4,t1:'1E',t2:'3G/K/L',v:'TBD'},
+  {id:'m078',g:'1/32',date:'2026-07-06',time:'20:00',tz:-4,t1:'1F',t2:'2A',v:'TBD'},
+  {id:'m079',g:'1/32',date:'2026-07-07',time:'14:00',tz:-5,t1:'1G',t2:'2C',v:'TBD'},
+  {id:'m080',g:'1/32',date:'2026-07-07',time:'20:00',tz:-5,t1:'1H',t2:'2D',v:'TBD'},
+  {id:'m081',g:'1/32',date:'2026-07-08',time:'14:00',tz:-4,t1:'1I',t2:'2F',v:'TBD'},
+  {id:'m082',g:'1/32',date:'2026-07-08',time:'20:00',tz:-4,t1:'1J',t2:'2E',v:'TBD'},
+  {id:'m083',g:'1/32',date:'2026-07-09',time:'14:00',tz:-5,t1:'1K',t2:'2H',v:'TBD'},
+  {id:'m084',g:'1/32',date:'2026-07-09',time:'20:00',tz:-5,t1:'1L',t2:'2G',v:'TBD'},
+  {id:'m085',g:'1/32',date:'2026-07-10',time:'14:00',tz:-4,t1:'2I',t2:'2J',v:'TBD'},
+  {id:'m086',g:'1/32',date:'2026-07-10',time:'20:00',tz:-5,t1:'2K',t2:'2L',v:'TBD'},
+  {id:'m087',g:'1/32',date:'2026-07-11',time:'14:00',tz:-4,t1:'3A/B/C',t2:'3G/H/I',v:'TBD'},
+  {id:'m088',g:'1/32',date:'2026-07-11',time:'20:00',tz:-5,t1:'3J/K/L',t2:'3D/E/F/G',v:'TBD'},
+  {id:'m089',g:'1/4',date:'2026-07-14',time:'14:00',tz:-4,t1:'W73',t2:'W74',v:'TBD'},
+  {id:'m090',g:'1/4',date:'2026-07-14',time:'20:00',tz:-5,t1:'W75',t2:'W76',v:'TBD'},
+  {id:'m091',g:'1/4',date:'2026-07-15',time:'14:00',tz:-4,t1:'W77',t2:'W78',v:'TBD'},
+  {id:'m092',g:'1/4',date:'2026-07-15',time:'20:00',tz:-5,t1:'W79',t2:'W80',v:'TBD'},
+  {id:'m093',g:'1/4',date:'2026-07-16',time:'14:00',tz:-4,t1:'W81',t2:'W82',v:'TBD'},
+  {id:'m094',g:'1/4',date:'2026-07-16',time:'20:00',tz:-5,t1:'W83',t2:'W84',v:'TBD'},
+  {id:'m095',g:'1/4',date:'2026-07-17',time:'14:00',tz:-4,t1:'W85',t2:'W86',v:'TBD'},
+  {id:'m096',g:'1/4',date:'2026-07-17',time:'20:00',tz:-5,t1:'W87',t2:'W88',v:'TBD'},
+  {id:'m097',g:'1/2',date:'2026-07-14',time:'20:00',tz:-4,t1:'W89',t2:'W90',v:'Atlanta'},
+  {id:'m098',g:'1/2',date:'2026-07-15',time:'20:00',tz:-5,t1:'W91',t2:'W92',v:'Dallas'},
+  {id:'m099',g:'1/2',date:'2026-07-16',time:'20:00',tz:-4,t1:'W93',t2:'W94',v:'New York'},
+  {id:'m100',g:'1/2',date:'2026-07-17',time:'20:00',tz:-5,t1:'W95',t2:'W96',v:'Dallas'},
+  {id:'m101',g:'3e',date:'2026-07-18',time:'15:00',tz:-4,t1:'L97',t2:'L98',v:'Miami'},
+  {id:'m102',g:'3e',date:'2026-07-18',time:'15:00',tz:-5,t1:'L99',t2:'L100',v:'Dallas'},
+  {id:'m103',g:'1/2',date:'2026-07-14',time:'20:00',tz:-4,t1:'W89',t2:'W91',v:'Atlanta'},
+  {id:'m104',g:'1/2',date:'2026-07-15',time:'20:00',tz:-4,t1:'W93',t2:'W95',v:'New York'},
+  {id:'m105',g:'🏆',date:'2026-07-19',time:'15:00',tz:-4,t1:'W103',t2:'W104',v:'New York/New Jersey'},
+];
+
+const GROUPS = ['A','B','C','D','E','F','G','H','I','J','K','L','1/32','1/4','1/2','3e','🏆'];
+const ROUND_LABELS = {'1/32':'Huitièmes','1/4':'Quarts','1/2':'Demi-finales','3e':'Petite finale','🏆':'Finale 🏆'};
+const rl = g => ROUND_LABELS[g] || ('Groupe '+g);
+
+// ─── STATE ───────────────────────────────────────────────────
+const LS = k => localStorage.getItem(k)||'';
+let S = {
+  step: LS('wc_pseudo') ? 'app' : LS('wc_ok') ? 'pseudo' : 'login',
+  pseudo: LS('wc_pseudo'),
+  tab: 'matches',
+  filter: 'all',
+  pronos: {},   // matchId → {pseudo → {s1,s2,pts,rid}}
+  results: {},  // matchId → {s1,s2,rid}
+  lb: [],
+  inp: {},
+  loading: false,
+  lm: null,
+  err: null,
+};
+
+// ─── AIRTABLE ────────────────────────────────────────────────
+async function at(method, path, body){
+  const r = await fetch(AT+path, {
+    method,
+    headers:{'Authorization':'Bearer '+AT_TOKEN,'Content-Type':'application/json'},
+    body: body ? JSON.stringify(body) : undefined
+  });
+  const d = await r.json();
+  if(!r.ok) throw new Error(d.error?.message||'Erreur Airtable ('+r.status+')');
+  return d;
+}
+
+async function loadAll(){
+  S.loading=true; render();
+  try {
+    // Pronos
+    let off='', recs=[];
+    do {
+      const d = await at('GET','Pronostics?pageSize=100'+(off?'&offset='+off:''));
+      recs = recs.concat(d.records||[]);
+      off = d.offset||'';
+    } while(off);
+    S.pronos={};
+    for(const r of recs){
+      const f=r.fields;
+      if(!S.pronos[f.MatchId]) S.pronos[f.MatchId]={};
+      S.pronos[f.MatchId][f.Pseudo]={s1:f.Score1,s2:f.Score2,pts:f.Points||0,rid:r.id};
+    }
+    // Résultats
+    const rd = await at('GET','Resultats?pageSize=200');
+    S.results={};
+    for(const r of (rd.records||[])){
+      const f=r.fields;
+      S.results[f.MatchId]={s1:f.Score1,s2:f.Score2,rid:r.id};
+    }
+    buildLB();
+  } catch(e){ toast(e.message,'e'); }
+  S.loading=false; render();
+}
+
+async function saveProno(mid){
+  const s1=parseInt(S.inp[mid+'_1']), s2=parseInt(S.inp[mid+'_2']);
+  if(isNaN(s1)||isNaN(s2)||s1<0||s2<0){ toast('Score invalide','e'); return; }
+  const m=M.find(x=>x.id===mid);
+  if(!m||status(m)!=='open'){ toast('Votes clôturés pour ce match','e'); return; }
+  S.lm=mid; render();
+  try {
+    const ex=S.pronos[mid]?.[S.pseudo];
+    if(ex?.rid){
+      await at('PATCH','Pronostics/'+ex.rid,{fields:{Score1:s1,Score2:s2}});
+    } else {
+      await at('POST','Pronostics',{records:[{fields:{MatchId:mid,Pseudo:S.pseudo,Score1:s1,Score2:s2,Points:0}}]});
+    }
+    if(!S.pronos[mid]) S.pronos[mid]={};
+    S.pronos[mid][S.pseudo]={s1,s2,pts:ex?.pts||0,rid:ex?.rid};
+    delete S.inp[mid+'_1']; delete S.inp[mid+'_2'];
+    toast('Prono enregistré ✓','s');
+  } catch(e){ toast(e.message,'e'); }
+  S.lm=null; render();
+}
+
+function buildLB(){
+  const pts={}, nb={};
+  for(const [mid,bp] of Object.entries(S.pronos))
+    for(const [ps,p] of Object.entries(bp)){
+      pts[ps]=(pts[ps]||0)+(p.pts||0);
+      nb[ps]=(nb[ps]||0)+1;
+    }
+  S.lb=Object.entries(pts).map(([p,pt])=>({p,pt,nb:nb[p]||0})).sort((a,b)=>b.pt-a.pt||b.nb-a.nb);
+}
+
+// ─── STATUS ──────────────────────────────────────────────────
+function status(m){
+  const now=new Date();
+  const [h,mi]=m.time.split(':').map(Number);
+  const mu=new Date(m.date+'T'+String(h).padStart(2,'0')+':'+String(mi).padStart(2,'0')+':00');
+  mu.setHours(mu.getHours()-m.tz);
+  const cut=new Date(mu-20*60*1000);
+  return now<cut?'open':now<mu?'closed':'played';
+}
+function fdate(m){
+  return new Date(m.date+'T12:00:00').toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'});
+}
+
+// ─── RENDER ──────────────────────────────────────────────────
+function render(){
+  const root=document.getElementById('root');
+  if(S.step==='login'){root.innerHTML=renderLogin();return;}
+  if(S.step==='pseudo'){root.innerHTML=renderPseudo();return;}
+  root.innerHTML=`
+<div class="app">
+  <div class="hdr">
+    <div style="display:flex;align-items:center;gap:10px">
+      <span style="font-size:26px">⚽</span>
+      <div><h1>WC 2026 Pronostics</h1><p>11 juin → 19 juillet 2026</p></div>
+    </div>
+  </div>
+  <div class="ubar">
+    <div class="uchip">
+      <div class="av">${S.pseudo.substring(0,2).toUpperCase()}</div>
+      <span style="font-size:14px;font-weight:600">${S.pseudo}</span>
+    </div>
+    <button class="btn sm" onclick="reload()">↻</button>
+  </div>
+  ${S.loading?'<div class="loading"><span class="spin"></span>Chargement...</div>':''}
+  <div class="tabs">
+    <button class="tab ${S.tab==='matches'?'on':''}" onclick="st('matches')">⚽ Matchs</button>
+    <button class="tab ${S.tab==='mine'?'on':''}" onclick="st('mine')">📋 Mes pronos</button>
+    <button class="tab ${S.tab==='all'?'on':''}" onclick="st('all')">👥 Tous</button>
+    <button class="tab ${S.tab==='lb'?'on':''}" onclick="st('lb')">🏆 Classement</button>
+  </div>
+  ${S.tab==='matches'?rMatches():''}
+  ${S.tab==='mine'?rMine():''}
+  ${S.tab==='all'?rAll():''}
+  ${S.tab==='lb'?rLB():''}
+</div>`;
+}
+
+function renderLogin(){
+  return `<div class="app"><div class="hdr"><div style="display:flex;align-items:center;gap:10px"><span style="font-size:26px">⚽</span><div><h1>WC 2026 Pronostics</h1><p>Coupe du Monde entre amis</p></div></div></div>
+<div class="lw">
+  <h2>Rejoindre le groupe</h2>
+  <p class="sub">Entre le mot de passe pour accéder aux pronostics.</p>
+  ${S.err?`<div class="err">${S.err}</div>`:''}
+  <div class="fg"><label>Mot de passe</label>
+    <input type="password" id="ipwd" placeholder="••••••••" onkeydown="if(event.key==='Enter')chkPwd()" />
+  </div>
+  <button class="btn pri" style="width:100%" onclick="chkPwd()">Entrer →</button>
+</div></div>`;
+}
+
+function renderPseudo(){
+  return `<div class="app"><div class="hdr"><div style="display:flex;align-items:center;gap:10px"><span style="font-size:26px">⚽</span><div><h1>WC 2026 Pronostics</h1><p>Coupe du Monde entre amis</p></div></div></div>
+<div class="lw">
+  <h2>Ton pseudo</h2>
+  <p class="sub">Choisis ton pseudo — il sera fixe et visible de tous dans le classement.</p>
+  ${S.err?`<div class="err">${S.err}</div>`:''}
+  <div class="fg"><label>Pseudo</label>
+    <input type="text" id="ips" placeholder="Ex: Zizou, Mbappé..." maxlength="20" onkeydown="if(event.key==='Enter')chkPseudo()" />
+  </div>
+  <button class="btn pri" style="width:100%" onclick="chkPseudo()">C'est parti ⚽</button>
+</div></div>`;
+}
+
+function rMatches(){
+  const filtered = S.filter==='all' ? M : M.filter(m=>m.g===S.filter);
+  return `
+    <div class="filters">
+      <button class="fbtn ${S.filter==='all'?'on':''}" onclick="sf('all')">Tous</button>
+      ${GROUPS.map(g=>`<button class="fbtn ${S.filter===g?'on':''}" onclick="sf('${g}')">${rl(g)}</button>`).join('')}
+    </div>
+    ${filtered.map(m=>rCard(m)).join('')}`;
+}
+
+function rCard(m){
+  const st=status(m), p=S.pronos[m.id]?.[S.pseudo], res=S.results[m.id];
+  const k1=m.id+'_1', k2=m.id+'_2', loading=S.lm===m.id;
+  const correct=res&&p&&p.s1===res.s1&&p.s2===res.s2;
+  const nbp=Object.keys(S.pronos[m.id]||{}).length;
+
+  const badge=st==='open'?'<span class="badge open">🟢 Ouvert</span>':
+    st==='closed'?'<span class="badge closed">🔒 Clôturé</span>':
+    '<span class="badge played">✓ Joué</span>';
+
+  const vsB=res?`<div class="sres">${res.s1}-${res.s2}</div>`:`<div class="vstxt">vs</div>`;
+
+  const pinf=p?`<div class="pinfo ${correct?'hit':''}">${correct?'🎯 +3pts · ':''}<b>${p.s1}-${p.s2}</b></div>`:
+    st==='open'?`<div class="pinfo" style="font-style:italic;font-size:11px">Pas de prono</div>`:
+    `<div class="pinfo">—</div>`;
+
+  const inp=st==='open'?`
+    <input class="sinp" type="number" min="0" max="20" placeholder="0" value="${S.inp[k1]??''}" oninput="S.inp['${k1}']=this.value" />
+    <span class="sep">-</span>
+    <input class="sinp" type="number" min="0" max="20" placeholder="0" value="${S.inp[k2]??''}" oninput="S.inp['${k2}']=this.value" />
+    <button class="btn pri sm" onclick="saveProno('${m.id}')" ${loading?'disabled':''}>${loading?'…':p?'Modifier':'Valider'}</button>`:'';
+
+  return `<div class="card">
+    <div class="mmeta">
+      <span class="mround">${rl(m.g)}</span>
+      <div style="display:flex;align-items:center;gap:6px">
+        <span class="mdate">${fdate(m)} · ${m.time} · ${m.v}</span>${badge}
+      </div>
+    </div>
+    <div class="mteams">
+      <div class="team"><span class="tf">${ff(m.t1)}</span><span class="tn">${m.t1}</span></div>
+      <div class="vsb">${vsB}</div>
+      <div class="team"><span class="tf">${ff(m.t2)}</span><span class="tn">${m.t2}</span></div>
+    </div>
+    <div class="pzone">
+      ${inp}${pinf}
+      ${nbp?`<span style="font-size:10px;color:var(--muted)">${nbp}👤</span>`:''}
+    </div>
+  </div>`;
+}
+
+function rMine(){
+  const mm=M.filter(m=>S.pronos[m.id]?.[S.pseudo]);
+  if(!mm.length) return `<div class="empty"><div class="ei">📋</div>Aucun prono pour l'instant.<br>Va dans l'onglet Matchs !</div>`;
+  const total=mm.reduce((a,m)=>a+(S.pronos[m.id]?.[S.pseudo]?.pts||0),0);
+  const hits=mm.filter(m=>{const p=S.pronos[m.id]?.[S.pseudo],r=S.results[m.id];return r&&p&&p.s1===r.s1&&p.s2===r.s2}).length;
+  const played=mm.filter(m=>status(m)==='played').length;
+  return `
+    <div class="sgrid">
+      <div class="scard"><div class="sval">${mm.length}</div><div class="slbl">Pronos</div></div>
+      <div class="scard"><div class="sval">${hits}</div><div class="slbl">Exacts 🎯</div></div>
+      <div class="scard"><div class="sval">${total}</div><div class="slbl">Points</div></div>
+    </div>
+    ${mm.map(m=>{
+      const p=S.pronos[m.id][S.pseudo],r=S.results[m.id];
+      const ok=r&&p.s1===r.s1&&p.s2===r.s2,st=status(m);
+      return `<div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
+          <span style="font-size:13px;font-weight:500">${ff(m.t1)} ${m.t1} vs ${m.t2} ${ff(m.t2)}</span>
+          ${ok?'<span class="badge open">🎯 +3</span>':st==='played'?'<span class="badge" style="background:#f3f4f6">0 pt</span>':'<span class="badge played">En attente</span>'}
+        </div>
+        <div style="font-size:12px;color:var(--muted)">${fdate(m)} · Prono : <b>${p.s1}-${p.s2}</b>${r?` · Résultat : <b>${r.s1}-${r.s2}</b>`:''}</div>
+      </div>`;
+    }).join('')}`;
+}
+
+function rAll(){
+  const vis=M.filter(m=>status(m)!=='open');
+  if(!vis.length) return `<div class="empty"><div class="ei">🕐</div>Les pronos des autres s'affichent<br>après la clôture des votes.</div>`;
+  const hasPronos=vis.some(m=>Object.keys(S.pronos[m.id]||{}).length>0);
+  if(!hasPronos) return `<div class="empty"><div class="ei">👥</div>Personne n'a encore fait de prono.</div>`;
+  return `<p class="note">Les pronos sont visibles après clôture des votes (20 min avant le match).</p>`+
+    vis.filter(m=>Object.keys(S.pronos[m.id]||{}).length).map(m=>{
+      const bp=S.pronos[m.id]||{},r=S.results[m.id];
+      return `<div class="card">
+        <div style="font-size:13px;font-weight:500;margin-bottom:7px">${ff(m.t1)} ${m.t1} vs ${m.t2} ${ff(m.t2)} · ${fdate(m)}</div>
+        ${r?`<div style="font-size:12px;color:var(--muted);margin-bottom:7px">Résultat officiel : <b>${r.s1}-${r.s2}</b></div>`:''}
+        <div style="display:flex;flex-wrap:wrap;gap:5px">
+          ${Object.entries(bp).map(([ps,p])=>{
+            const ok=r&&p.s1===r.s1&&p.s2===r.s2;
+            return `<span style="padding:3px 10px;border-radius:20px;font-size:12px;background:${ok?'var(--sbg)':'#f3f4f6'};color:${ok?'var(--success)':'var(--text)'};border:1px solid ${ok?'#a7f3d0':'var(--border)'}">${ps} : <b>${p.s1}-${p.s2}</b>${ok?' 🎯':''}</span>`;
+          }).join('')}
+        </div>
+      </div>`;
+    }).join('');
+}
+
+function rLB(){
+  if(!S.lb.length) return `<div class="empty"><div class="ei">🏆</div>Personne n'a encore de points.<br>Les scores s'affichent après les matchs !</div>`;
+  const med=['🥇','🥈','🥉'];
+  return `<div class="card">
+    ${S.lb.map((r,i)=>`
+      <div class="lbrow">
+        <span class="lbrank">${med[i]||i+1}</span>
+        <div class="av">${r.p.substring(0,2).toUpperCase()}</div>
+        <div style="flex:1"><div class="lbname">${r.p}</div><div class="lbsub">${r.nb} prono${r.nb>1?'s':''}</div></div>
+        <div class="lbpts">${r.pt} pts</div>
+      </div>`).join('')}
+  </div>
+  <p style="font-size:12px;color:var(--muted);text-align:center;margin-top:10px">3 pts par score exact · Clôture 20 min avant chaque match</p>`;
+}
+
+// ─── ACTIONS ─────────────────────────────────────────────────
+function st(t){S.tab=t;render();}
+function sf(f){S.filter=f;render();}
+function reload(){loadAll();}
+
+function chkPwd(){
+  const v=document.getElementById('ipwd')?.value?.trim();
+  if(v!==PWD){S.err='Mot de passe incorrect';render();return;}
+  S.err=null; localStorage.setItem('wc_ok','1'); S.step='pseudo'; render();
+}
+
+async function chkPseudo(){
+  const v=document.getElementById('ips')?.value?.trim();
+  if(!v||v.length<2){S.err='Pseudo trop court (min 2 caractères)';render();return;}
+  // Vérifie que le pseudo n'est pas déjà pris
+  S.loading=true; S.err=null; render();
+  try {
+    const d=await at('GET','Pronostics?maxRecords=1&filterByFormula='+encodeURIComponent(`{Pseudo}="${v}"`));
+    if(d.records?.length>0){
+      S.loading=false; S.err='Ce pseudo est déjà pris, choisis-en un autre.'; render(); return;
+    }
+  } catch(e){}
+  S.pseudo=v; localStorage.setItem('wc_pseudo',v); S.step='app'; S.loading=false;
+  loadAll();
+}
+
+function toast(msg,type){
+  const t=document.createElement('div');
+  t.className='toast t'+(type||'s');
+  t.textContent=msg;
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(),3000);
+}
+
+// ─── INIT ────────────────────────────────────────────────────
+render();
+if(S.step==='app') loadAll();
+</script>
+</body>
+</html>
