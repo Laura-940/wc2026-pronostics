@@ -291,7 +291,7 @@ const LS=k=>localStorage.getItem(k)||'';
 let S={
   step:LS('wc_pseudo')?'app':LS('wc_ok')?'pseudo':'login',
   pseudo:LS('wc_pseudo'),tab:'matches',filter:'week',
-  pronos:{},results:{},lb:[],inp:{},loading:false,lm:null,err:null,
+  pronos:{},results:{},lb:[],inp:{},loading:false,lm:null,err:null,editing:null,
 };
 
 // ─── DATE HELPERS ─────────────────────────────────────────────
@@ -466,13 +466,52 @@ function rCard(m){
   const correct=res&&p&&p.s1===res.s1&&p.s2===res.s2;
   const nbp=Object.keys(S.pronos[m.id]||{}).length;
   const tod=isToday(m);
+  // Editing mode : soit pas de prono, soit en train de modifier
+  const editing=S.editing===m.id;
   const badge=tod&&st==='open'?'<span class="badge b-today">🔥 AUJOURD\'HUI</span>':st==='open'?'<span class="badge b-open">● OUVERT</span>':st==='closed'?'<span class="badge b-closed">🔒 CLÔTURÉ</span>':'<span class="badge b-played">✓ TERMINÉ</span>';
   const vsB=res?`<div class="score-live">${res.s1}-${res.s2}</div>`:`<div class="vs-txt">VS</div>`;
-  const pinf=p?`<div class="pinfo ${correct?'hit':''}">${correct?'🎯 +3pts · ':''}<b>${p.s1}-${p.s2}</b>${nbp>1?` · ${nbp}👤`:''}</div>`:st==='open'?`<div class="pinfo" style="font-style:italic;font-size:10px">Pas encore de prono${nbp?` · ${nbp}👤`:''}</div>`:`<div class="pinfo">${nbp?`${nbp}👤`:''}</div>`;
-  const inp=st==='open'?`<input class="sinp" type="number" min="0" max="20" placeholder="0" value="${S.inp[k1]??''}" oninput="S.inp['${k1}']=this.value"/><span class="sep">—</span><input class="sinp" type="number" min="0" max="20" placeholder="0" value="${S.inp[k2]??''}" oninput="S.inp['${k2}']=this.value"/><button class="btn pri sm" style="flex-shrink:0" onclick="saveProno('${m.id}')" ${loading?'disabled':''}>${loading?'<span class="spin" style="width:14px;height:14px;border-width:2px;margin:0"></span>':p?'Modifier':'Valider'}</button>`:'';
-  return `<div class="mcard ${tod&&st==='open'?'today':''}">
+
+  let pronoZone='';
+  if(st==='open'){
+    if(p && !editing){
+      // Prono soumis — on cache les inputs, on affiche le résumé + bouton modifier
+      pronoZone=`
+        <div class="mcard-prono" style="justify-content:space-between">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:18px">✅</span>
+            <div>
+              <div style="font-size:13px;font-weight:700;color:var(--neon)">${p.s1} — ${p.s2}</div>
+              <div style="font-size:10px;color:var(--muted)">Prono enregistré</div>
+            </div>
+          </div>
+          <button class="btn sm" style="border-color:var(--border2);color:var(--muted2)" onclick="startEdit('${m.id}')">✏️ Modifier</button>
+        </div>`;
+    } else {
+      // Pas de prono ou en train de modifier
+      const v1=editing&&p?p.s1:S.inp[k1]??'';
+      const v2=editing&&p?p.s2:S.inp[k2]??'';
+      pronoZone=`
+        <div class="mcard-prono">
+          <input class="sinp" type="number" min="0" max="20" placeholder="0" value="${v1}" oninput="S.inp['${k1}']=this.value"/>
+          <span class="sep">—</span>
+          <input class="sinp" type="number" min="0" max="20" placeholder="0" value="${v2}" oninput="S.inp['${k2}']=this.value"/>
+          <button class="btn pri sm" style="flex-shrink:0" onclick="saveProno('${m.id}')" ${loading?'disabled':''}>${loading?'<span class="spin" style="width:14px;height:14px;border-width:2px;margin:0"></span>':'Valider ✓'}</button>
+          ${editing?`<button class="btn sm ghost" onclick="cancelEdit('${m.id}')">Annuler</button>`:''}
+        </div>`;
+    }
+  } else {
+    // Match clôturé ou terminé
+    const nbpTxt=nbp?`<span style="font-size:10px;color:var(--muted)">${nbp}👤</span>`:'';
+    if(p){
+      pronoZone=`<div class="mcard-prono" style="justify-content:space-between"><div style="font-size:12px;color:var(--muted)">Ton prono : <b style="color:${correct?'var(--neon)':'var(--text)'}">${p.s1}-${p.s2}</b>${correct?' 🎯':''}</div>${nbpTxt}</div>`;
+    } else {
+      pronoZone=`<div class="mcard-prono" style="justify-content:space-between"><div style="font-size:11px;color:var(--muted);font-style:italic">Pas de prono soumis</div>${nbpTxt}</div>`;
+    }
+  }
+
+  return `<div class="mcard ${tod&&st==='open'&&!p?'today':''}">
     <div class="mcard-top">
-      <div class="mcard-left">${tod?'<span class="today-dot"></span>':''}<span class="mcard-round">${rl(m.g)}</span></div>
+      <div class="mcard-left">${tod&&st==='open'?'<span class="today-dot"></span>':''}<span class="mcard-round">${rl(m.g)}</span></div>
       <div style="display:flex;align-items:center;gap:6px"><span style="font-size:10px;color:var(--muted)">${m.time}</span>${badge}</div>
     </div>
     <div class="mcard-teams">
@@ -481,7 +520,7 @@ function rCard(m){
       <div class="team"><span class="team-flag">${ff(m.t2)}</span><span class="team-name">${m.t2}</span></div>
     </div>
     <div class="mcard-venue">${m.v}</div>
-    <div class="mcard-prono">${inp}${pinf}</div>
+    ${pronoZone}
   </div>`;
 }
 
@@ -490,8 +529,7 @@ function rMine(){
   if(!mm.length) return`<div class="empty"><span class="empty-icon">📋</span><div class="empty-text">Aucun prono pour l'instant</div><div class="empty-sub">Va dans l'onglet Matchs et fais tes premiers pronos !</div></div>`;
   const total=mm.reduce((a,m)=>a+(S.pronos[m.id]?.[S.pseudo]?.pts||0),0);
   const hits=mm.filter(m=>{const p=S.pronos[m.id]?.[S.pseudo],r=S.results[m.id];return r&&p&&p.s1===r.s1&&p.s2===r.s2}).length;
-  return `<div class="stats"><div class="stat"><div class="stat-val">${mm.length}</div><div class="stat-lbl">Pronos</div></div><div class="stat"><div class="stat-val">${hits}</div><div class="stat-lbl">Exacts 🎯</div></div><div class="stat"><div class="stat-val" style="color:var(--yellow)">${total}</div><div class="stat-lbl">Points</div></div></div>
-  ${mm.map(m=>{const p=S.pronos[m.id][S.pseudo],r=S.results[m.id],ok=r&&p.s1===r.s1&&p.s2===r.s2,st=status(m);return`<div class="mycard"><div class="mycard-hdr"><span class="mycard-match">${ff(m.t1)} ${m.t1} vs ${m.t2} ${ff(m.t2)}</span>${ok?'<span class="badge b-open">🎯 +3</span>':st==='played'?'<span class="badge" style="background:var(--surface2);border-color:var(--border);color:var(--muted)">0 pt</span>':'<span class="badge b-played">En attente</span>'}</div><div class="mycard-meta">${fdate(m)} ${m.time} · Prono : <b style="color:var(--text)">${p.s1}-${p.s2}</b>${r?` · Résultat : <b style="color:${ok?'var(--neon)':'var(--red)'}">${r.s1}-${r.s2}</b>`:''}</div></div>`;}).join('')}`;
+  return `<div class="stats"><div class="stat"><div class="stat-val">${mm.length}</div><div class="stat-lbl">Pronos</div></div><div class="stat"><div class="stat-val">${hits}</div><div class="stat-lbl">Exacts 🎯</div></div><div class="stat"><div class="stat-val" style="color:var(--yellow)">${total}</div><div class="stat-lbl">Points</div></div></div>${mm.map(m=>{const p=S.pronos[m.id][S.pseudo],r=S.results[m.id],ok=r&&p.s1===r.s1&&p.s2===r.s2,st=status(m),canModify=st==="open";return `<div class="mycard"><div class="mycard-hdr"><span class="mycard-match">${ff(m.t1)} ${m.t1} vs ${m.t2} ${ff(m.t2)}</span>${ok?"<span class=\"badge b-open\">🎯 +3</span>":st==="played"?"<span class=\"badge\" style=\"background:var(--surface2);border-color:var(--border);color:var(--muted)\">0 pt</span>":st==="closed"?"<span class=\"badge b-closed\">🔒 Clôturé</span>":"<span class=\"badge b-played\">En attente</span>"}</div><div class="mycard-meta" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px"><span>${fdate(m)} ${m.time} · Prono&nbsp;: <b style="color:var(--text)">${p.s1}-${p.s2}</b>${r?` · Résultat&nbsp;: <b style="color:${ok?"var(--neon)":"var(--red)"}">${r.s1}-${r.s2}</b>`:""}</span>${canModify?`<button class="btn sm" style="border-color:var(--border2);color:var(--muted2);font-size:11px" onclick="goEditMatch(\"${m.id}\")">✏️ Modifier</button>`:""}</div></div>`;}).join("")}`;
 }
 
 function rAll(){
@@ -518,6 +556,9 @@ function rPseudo(){
 function st(t){S.tab=t;render();}
 function sf(f){S.filter=f;render();}
 function reload(){loadAll();}
+function startEdit(mid){S.editing=mid;render();setTimeout(()=>{const el=document.querySelector(".sinp");if(el)el.focus();},50);}
+function cancelEdit(mid){S.editing=null;delete S.inp[mid+"_1"];delete S.inp[mid+"_2"];render();}
+function goEditMatch(mid){S.tab="matches";S.filter="all";S.editing=mid;render();}
 
 function chkPwd(){
   const v=document.getElementById('ipwd')?.value?.trim();
