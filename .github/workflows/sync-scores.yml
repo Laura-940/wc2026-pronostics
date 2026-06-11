@@ -1,0 +1,223 @@
+name: Sync Scores
+
+on:
+  schedule:
+    - cron: '0 * * * *'  # toutes les heures
+  workflow_dispatch:      # ou manuellement
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Sync World Cup scores to Airtable
+        env:
+          FOOTBALL_TOKEN: ${{ secrets.FOOTBALL_DATA_TOKEN }}
+          AIRTABLE_TOKEN: ${{ secrets.AIRTABLE_TOKEN }}
+          BASE_ID: app6kZ7JVeTWarmFR
+        run: |
+          node << 'EOF'
+          const https = require('https');
+
+          // Map entre les noms FIFA et les IDs de nos matchs
+          // Noms en français comme dans notre app
+          const MATCH_MAP = {
+            'Mexico_South Africa': 'm001',
+            'South Korea_Czechia': 'm002',
+            'Czechia_South Africa': 'm003',
+            'Mexico_South Korea': 'm004',
+            'South Africa_South Korea': 'm005',
+            'Mexico_Czechia': 'm006',
+            'Canada_Bosnia and Herzegovina': 'm007',
+            'Qatar_Switzerland': 'm008',
+            'Canada_Qatar': 'm009',
+            'Switzerland_Bosnia and Herzegovina': 'm010',
+            'Bosnia and Herzegovina_Qatar': 'm011',
+            'Switzerland_Canada': 'm012',
+            'Brazil_Morocco': 'm013',
+            'Haiti_Scotland': 'm014',
+            'United States_Paraguay': 'm015',
+            'Brazil_Haiti': 'm016',
+            'Scotland_Morocco': 'm017',
+            'Morocco_Haiti': 'm018',
+            'Scotland_Brazil': 'm019',
+            'Australia_Türkiye': 'm020',
+            'Türkiye_Paraguay': 'm021',
+            'United States_Australia': 'm022',
+            'Türkiye_United States': 'm023',
+            'Paraguay_Australia': 'm024',
+            'Germany_Curaçao': 'm025',
+            "Côte d'Ivoire_Ecuador": 'm026',
+            'Netherlands_Japan': 'm027',
+            "Germany_Côte d'Ivoire": 'm028',
+            'Ecuador_Curaçao': 'm029',
+            "Curaçao_Côte d'Ivoire": 'm030',
+            'Ecuador_Germany': 'm031',
+            'Sweden_Tunisia': 'm032',
+            'Netherlands_Sweden': 'm033',
+            'Tunisia_Japan': 'm034',
+            'Japan_Sweden': 'm035',
+            'Tunisia_Netherlands': 'm036',
+            'Spain_Cape Verde': 'm037',
+            'Saudi Arabia_Uruguay': 'm038',
+            'Spain_Saudi Arabia': 'm039',
+            'Uruguay_Cape Verde': 'm040',
+            'Cape Verde_Saudi Arabia': 'm041',
+            'Uruguay_Spain': 'm042',
+            'Belgium_Egypt': 'm043',
+            'Iran_New Zealand': 'm044',
+            'Belgium_Iran': 'm045',
+            'New Zealand_Egypt': 'm046',
+            'Egypt_Iran': 'm047',
+            'New Zealand_Belgium': 'm048',
+            'France_Senegal': 'm049',
+            'Iraq_Norway': 'm050',
+            'France_Iraq': 'm051',
+            'Norway_Senegal': 'm052',
+            'Senegal_Iraq': 'm053',
+            'Norway_France': 'm054',
+            'Argentina_Algeria': 'm055',
+            'Austria_Jordan': 'm056',
+            'Argentina_Austria': 'm057',
+            'Jordan_Algeria': 'm058',
+            'Algeria_Austria': 'm059',
+            'Jordan_Argentina': 'm060',
+            'Portugal_DR Congo': 'm061',
+            'England_Croatia': 'm062',
+            'Portugal_England': 'm063',
+            'Croatia_DR Congo': 'm064',
+            'DR Congo_England': 'm065',
+            'Croatia_Portugal': 'm066',
+            'Ghana_Panama': 'm067',
+            'Uzbekistan_Colombia': 'm068',
+            'Ghana_Uzbekistan': 'm069',
+            'Colombia_Panama': 'm070',
+            'Panama_Uzbekistan': 'm071',
+            'Colombia_Ghana': 'm072',
+          };
+
+          function fetch(url, headers) {
+            return new Promise((resolve, reject) => {
+              const opts = new URL(url);
+              https.get({ hostname: opts.hostname, path: opts.pathname + opts.search, headers }, res => {
+                let data = '';
+                res.on('data', chunk => data += chunk);
+                res.on('end', () => resolve({ status: res.statusCode, body: JSON.parse(data) }));
+              }).on('error', reject);
+            });
+          }
+
+          async function atFetch(method, path, body) {
+            return new Promise((resolve, reject) => {
+              const data = body ? JSON.stringify(body) : null;
+              const opts = {
+                hostname: 'api.airtable.com',
+                path: `/v0/${process.env.BASE_ID}/${path}`,
+                method,
+                headers: {
+                  'Authorization': `Bearer ${process.env.AIRTABLE_TOKEN}`,
+                  'Content-Type': 'application/json',
+                  ...(data ? { 'Content-Length': Buffer.byteLength(data) } : {})
+                }
+              };
+              const req = https.request(opts, res => {
+                let d = '';
+                res.on('data', chunk => d += chunk);
+                res.on('end', () => resolve(JSON.parse(d)));
+              });
+              req.on('error', reject);
+              if (data) req.write(data);
+              req.end();
+            });
+          }
+
+          async function main() {
+            console.log('Fetching World Cup matches from football-data.org...');
+            
+            // Récupère tous les matchs de la Coupe du Monde (competition id 2000)
+            const res = await fetch(
+              'https://api.football-data.org/v4/competitions/2000/matches?status=FINISHED',
+              { 'X-Auth-Token': process.env.FOOTBALL_TOKEN }
+            );
+
+            if (res.status !== 200) {
+              console.error('API error:', res.status, res.body);
+              process.exit(1);
+            }
+
+            const matches = res.body.matches || [];
+            console.log(`Found ${matches.length} finished matches`);
+
+            // Récupère les résultats déjà dans Airtable
+            const existing = await atFetch('GET', 'Resultats?pageSize=100');
+            const existingMap = {};
+            for (const r of (existing.records || [])) {
+              existingMap[r.fields.MatchId] = r.id;
+            }
+
+            // Récupère tous les pronos pour calculer les points
+            let pronos = [], off = '';
+            do {
+              const d = await atFetch('GET', `Pronostics?pageSize=100${off ? '&offset=' + off : ''}`);
+              pronos = pronos.concat(d.records || []);
+              off = d.offset || '';
+            } while (off);
+            console.log(`Found ${pronos.length} pronostics`);
+
+            let updated = 0, created = 0, pointsUpdated = 0;
+
+            for (const match of matches) {
+              const home = match.homeTeam?.name || '';
+              const away = match.awayTeam?.name || '';
+              const key1 = `${home}_${away}`;
+              const key2 = `${away}_${home}`;
+              const matchId = MATCH_MAP[key1] || MATCH_MAP[key2];
+
+              if (!matchId) {
+                console.log(`No mapping for: ${home} vs ${away}`);
+                continue;
+              }
+
+              const score1 = match.score?.fullTime?.home;
+              const score2 = match.score?.fullTime?.away;
+
+              if (score1 === null || score1 === undefined || score2 === null || score2 === undefined) continue;
+
+              // Si le mapping est inversé, on inverse les scores
+              const isInverted = !!MATCH_MAP[key2] && !MATCH_MAP[key1];
+              const s1 = isInverted ? score2 : score1;
+              const s2 = isInverted ? score1 : score2;
+
+              console.log(`${matchId}: ${home} ${s1}-${s2} ${away}`);
+
+              // Upsert dans Resultats
+              if (existingMap[matchId]) {
+                await atFetch('PATCH', `Resultats/${existingMap[matchId]}`, {
+                  fields: { MatchId: matchId, Score1: s1, Score2: s2 }
+                });
+                updated++;
+              } else {
+                const created_rec = await atFetch('POST', 'Resultats', {
+                  records: [{ fields: { MatchId: matchId, Score1: s1, Score2: s2 } }]
+                });
+                existingMap[matchId] = created_rec.records?.[0]?.id;
+                created++;
+              }
+
+              // Calcule les points pour chaque prono de ce match
+              const matchPronos = pronos.filter(p => p.fields.MatchId === matchId);
+              for (const prono of matchPronos) {
+                const pts = (prono.fields.Score1 === s1 && prono.fields.Score2 === s2) ? 3 : 0;
+                if (prono.fields.Points !== pts) {
+                  await atFetch('PATCH', `Pronostics/${prono.id}`, {
+                    fields: { Points: pts }
+                  });
+                  pointsUpdated++;
+                }
+              }
+            }
+
+            console.log(`Done! Created: ${created}, Updated: ${updated}, Points updated: ${pointsUpdated}`);
+          }
+
+          main().catch(err => { console.error(err); process.exit(1); });
+          EOF
