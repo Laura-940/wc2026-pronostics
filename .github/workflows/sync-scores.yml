@@ -2,8 +2,8 @@ name: Sync Scores
 
 on:
   schedule:
-    - cron: '0 * * * *'  # toutes les heures
-  workflow_dispatch:      # ou manuellement
+    - cron: '*/30 * * * *'  # toutes les 30 minutes
+  workflow_dispatch:
 
 jobs:
   sync:
@@ -18,82 +18,100 @@ jobs:
           node << 'EOF'
           const https = require('https');
 
-          // Map entre les noms FIFA et les IDs de nos matchs
-          // Noms en français comme dans notre app
-          const MATCH_MAP = {
-            'Mexico_South Africa': 'm001',
-            'South Korea_Czechia': 'm002',
-            'Czechia_South Africa': 'm003',
-            'Mexico_South Korea': 'm004',
-            'South Africa_South Korea': 'm005',
-            'Mexico_Czechia': 'm006',
-            'Canada_Bosnia and Herzegovina': 'm007',
-            'Qatar_Switzerland': 'm008',
-            'Canada_Qatar': 'm009',
-            'Switzerland_Bosnia and Herzegovina': 'm010',
-            'Bosnia and Herzegovina_Qatar': 'm011',
-            'Switzerland_Canada': 'm012',
-            'Brazil_Morocco': 'm013',
-            'Haiti_Scotland': 'm014',
-            'United States_Paraguay': 'm015',
-            'Brazil_Haiti': 'm016',
-            'Scotland_Morocco': 'm017',
-            'Morocco_Haiti': 'm018',
-            'Scotland_Brazil': 'm019',
-            'Australia_Türkiye': 'm020',
-            'Türkiye_Paraguay': 'm021',
-            'United States_Australia': 'm022',
-            'Türkiye_United States': 'm023',
-            'Paraguay_Australia': 'm024',
-            'Germany_Curaçao': 'm025',
-            "Côte d'Ivoire_Ecuador": 'm026',
-            'Netherlands_Japan': 'm027',
-            "Germany_Côte d'Ivoire": 'm028',
-            'Ecuador_Curaçao': 'm029',
-            "Curaçao_Côte d'Ivoire": 'm030',
-            'Ecuador_Germany': 'm031',
-            'Sweden_Tunisia': 'm032',
-            'Netherlands_Sweden': 'm033',
-            'Tunisia_Japan': 'm034',
-            'Japan_Sweden': 'm035',
-            'Tunisia_Netherlands': 'm036',
-            'Spain_Cape Verde': 'm037',
-            'Saudi Arabia_Uruguay': 'm038',
-            'Spain_Saudi Arabia': 'm039',
-            'Uruguay_Cape Verde': 'm040',
-            'Cape Verde_Saudi Arabia': 'm041',
-            'Uruguay_Spain': 'm042',
-            'Belgium_Egypt': 'm043',
-            'Iran_New Zealand': 'm044',
-            'Belgium_Iran': 'm045',
-            'New Zealand_Egypt': 'm046',
-            'Egypt_Iran': 'm047',
-            'New Zealand_Belgium': 'm048',
-            'France_Senegal': 'm049',
-            'Iraq_Norway': 'm050',
-            'France_Iraq': 'm051',
-            'Norway_Senegal': 'm052',
-            'Senegal_Iraq': 'm053',
-            'Norway_France': 'm054',
-            'Argentina_Algeria': 'm055',
-            'Austria_Jordan': 'm056',
-            'Argentina_Austria': 'm057',
-            'Jordan_Algeria': 'm058',
-            'Algeria_Austria': 'm059',
-            'Jordan_Argentina': 'm060',
-            'Portugal_DR Congo': 'm061',
-            'England_Croatia': 'm062',
-            'Portugal_England': 'm063',
-            'Croatia_DR Congo': 'm064',
-            'DR Congo_England': 'm065',
-            'Croatia_Portugal': 'm066',
-            'Ghana_Panama': 'm067',
-            'Uzbekistan_Colombia': 'm068',
-            'Ghana_Uzbekistan': 'm069',
-            'Colombia_Panama': 'm070',
-            'Panama_Uzbekistan': 'm071',
-            'Colombia_Ghana': 'm072',
+          // Normalise un nom d'équipe pour le matching :
+          // enlève accents, &/and, espaces, tirets, casse
+          function norm(s) {
+            return s
+              .toLowerCase()
+              .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // accents
+              .replace(/\bthe\b/g, '')
+              .replace(/&/g, 'and')
+              .replace(/[^a-z0-9]/g, ''); // tout le reste
+          }
+
+          // Pour chaque match : [équipe1, équipe2] avec les noms tels qu'utilisés
+          // par football-data.org (anglais). La normalisation gère les variantes.
+          const MATCHES = {
+            m001: ['Mexico', 'South Africa'],
+            m002: ['South Korea', 'Czechia'],
+            m003: ['Czechia', 'South Africa'],
+            m004: ['Mexico', 'South Korea'],
+            m005: ['South Africa', 'South Korea'],
+            m006: ['Mexico', 'Czechia'],
+            m007: ['Canada', 'Bosnia and Herzegovina'],
+            m008: ['Qatar', 'Switzerland'],
+            m009: ['Canada', 'Qatar'],
+            m010: ['Switzerland', 'Bosnia and Herzegovina'],
+            m011: ['Bosnia and Herzegovina', 'Qatar'],
+            m012: ['Switzerland', 'Canada'],
+            m013: ['Brazil', 'Morocco'],
+            m014: ['Haiti', 'Scotland'],
+            m015: ['United States', 'Paraguay'],
+            m016: ['Brazil', 'Haiti'],
+            m017: ['Scotland', 'Morocco'],
+            m018: ['Morocco', 'Haiti'],
+            m019: ['Scotland', 'Brazil'],
+            m020: ['Australia', 'Türkiye'],
+            m021: ['Türkiye', 'Paraguay'],
+            m022: ['United States', 'Australia'],
+            m023: ['Türkiye', 'United States'],
+            m024: ['Paraguay', 'Australia'],
+            m025: ['Germany', 'Curaçao'],
+            m026: ["Côte d'Ivoire", 'Ecuador'],
+            m027: ['Netherlands', 'Japan'],
+            m028: ['Germany', "Côte d'Ivoire"],
+            m029: ['Ecuador', 'Curaçao'],
+            m030: ['Curaçao', "Côte d'Ivoire"],
+            m031: ['Ecuador', 'Germany'],
+            m032: ['Sweden', 'Tunisia'],
+            m033: ['Netherlands', 'Sweden'],
+            m034: ['Tunisia', 'Japan'],
+            m035: ['Japan', 'Sweden'],
+            m036: ['Tunisia', 'Netherlands'],
+            m037: ['Spain', 'Cape Verde'],
+            m038: ['Saudi Arabia', 'Uruguay'],
+            m039: ['Spain', 'Saudi Arabia'],
+            m040: ['Uruguay', 'Cape Verde'],
+            m041: ['Cape Verde', 'Saudi Arabia'],
+            m042: ['Uruguay', 'Spain'],
+            m043: ['Belgium', 'Egypt'],
+            m044: ['Iran', 'New Zealand'],
+            m045: ['Belgium', 'Iran'],
+            m046: ['New Zealand', 'Egypt'],
+            m047: ['Egypt', 'Iran'],
+            m048: ['New Zealand', 'Belgium'],
+            m049: ['France', 'Senegal'],
+            m050: ['Iraq', 'Norway'],
+            m051: ['France', 'Iraq'],
+            m052: ['Norway', 'Senegal'],
+            m053: ['Senegal', 'Iraq'],
+            m054: ['Norway', 'France'],
+            m055: ['Argentina', 'Algeria'],
+            m056: ['Austria', 'Jordan'],
+            m057: ['Argentina', 'Austria'],
+            m058: ['Jordan', 'Algeria'],
+            m059: ['Algeria', 'Austria'],
+            m060: ['Jordan', 'Argentina'],
+            m061: ['Portugal', 'DR Congo'],
+            m062: ['England', 'Croatia'],
+            m063: ['Portugal', 'England'],
+            m064: ['Croatia', 'DR Congo'],
+            m065: ['DR Congo', 'England'],
+            m066: ['Croatia', 'Portugal'],
+            m067: ['Ghana', 'Panama'],
+            m068: ['Uzbekistan', 'Colombia'],
+            m069: ['Ghana', 'Uzbekistan'],
+            m070: ['Colombia', 'Panama'],
+            m071: ['Panama', 'Uzbekistan'],
+            m072: ['Colombia', 'Ghana'],
           };
+
+          // Index normalisé : norm(team1)+'_'+norm(team2) -> matchId, avec ordre connu
+          const INDEX = {};
+          for (const [mid, [t1, t2]] of Object.entries(MATCHES)) {
+            INDEX[norm(t1) + '_' + norm(t2)] = { mid, swapped: false };
+            INDEX[norm(t2) + '_' + norm(t1)] = { mid, swapped: true };
+          }
 
           function fetch(url, headers) {
             return new Promise((resolve, reject) => {
@@ -101,7 +119,10 @@ jobs:
               https.get({ hostname: opts.hostname, path: opts.pathname + opts.search, headers }, res => {
                 let data = '';
                 res.on('data', chunk => data += chunk);
-                res.on('end', () => resolve({ status: res.statusCode, body: JSON.parse(data) }));
+                res.on('end', () => {
+                  try { resolve({ status: res.statusCode, body: JSON.parse(data) }); }
+                  catch (e) { resolve({ status: res.statusCode, body: data }); }
+                });
               }).on('error', reject);
             });
           }
@@ -122,7 +143,7 @@ jobs:
               const req = https.request(opts, res => {
                 let d = '';
                 res.on('data', chunk => d += chunk);
-                res.on('end', () => resolve(JSON.parse(d)));
+                res.on('end', () => { try { resolve(JSON.parse(d)); } catch(e){ resolve({}); } });
               });
               req.on('error', reject);
               if (data) req.write(data);
@@ -130,31 +151,33 @@ jobs:
             });
           }
 
+          function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
+
           async function main() {
             console.log('Fetching World Cup matches from football-data.org...');
-            
-            // Récupère tous les matchs de la Coupe du Monde (competition id 2000)
+
+            // Récupère TOUS les matchs de la Coupe du Monde (compétition 2000)
             const res = await fetch(
-              'https://api.football-data.org/v4/competitions/2000/matches?status=FINISHED',
+              'https://api.football-data.org/v4/competitions/2000/matches',
               { 'X-Auth-Token': process.env.FOOTBALL_TOKEN }
             );
 
             if (res.status !== 200) {
-              console.error('API error:', res.status, res.body);
+              console.error('API error:', res.status, JSON.stringify(res.body).slice(0,500));
               process.exit(1);
             }
 
-            const matches = res.body.matches || [];
-            console.log(`Found ${matches.length} finished matches`);
+            const matches = (res.body.matches || []).filter(m => m.status === 'FINISHED');
+            console.log(`Found ${matches.length} finished matches from API`);
 
             // Récupère les résultats déjà dans Airtable
             const existing = await atFetch('GET', 'Resultats?pageSize=100');
             const existingMap = {};
             for (const r of (existing.records || [])) {
-              existingMap[r.fields.MatchId] = r.id;
+              existingMap[r.fields.MatchId] = { id: r.id, s1: r.fields.Score1, s2: r.fields.Score2 };
             }
 
-            // Récupère tous les pronos pour calculer les points
+            // Récupère tous les pronos
             let pronos = [], off = '';
             do {
               const d = await atFetch('GET', `Pronostics?pageSize=100${off ? '&offset=' + off : ''}`);
@@ -163,35 +186,38 @@ jobs:
             } while (off);
             console.log(`Found ${pronos.length} pronostics`);
 
-            let updated = 0, created = 0, pointsUpdated = 0;
+            let updated = 0, created = 0, pointsUpdated = 0, matched = 0;
 
             for (const match of matches) {
-              const home = match.homeTeam?.name || '';
-              const away = match.awayTeam?.name || '';
-              const key1 = `${home}_${away}`;
-              const key2 = `${away}_${home}`;
-              const matchId = MATCH_MAP[key1] || MATCH_MAP[key2];
+              const home = match.homeTeam?.name || match.homeTeam?.shortName || '';
+              const away = match.awayTeam?.name || match.awayTeam?.shortName || '';
+              const key = norm(home) + '_' + norm(away);
+              const entry = INDEX[key];
 
-              if (!matchId) {
-                console.log(`No mapping for: ${home} vs ${away}`);
+              if (!entry) {
+                console.log(`No mapping for: "${home}" vs "${away}" (key=${key})`);
                 continue;
               }
+              matched++;
 
               const score1 = match.score?.fullTime?.home;
               const score2 = match.score?.fullTime?.away;
-
               if (score1 === null || score1 === undefined || score2 === null || score2 === undefined) continue;
 
-              // Si le mapping est inversé, on inverse les scores
-              const isInverted = !!MATCH_MAP[key2] && !MATCH_MAP[key1];
-              const s1 = isInverted ? score2 : score1;
-              const s2 = isInverted ? score1 : score2;
+              const s1 = entry.swapped ? score2 : score1;
+              const s2 = entry.swapped ? score1 : score2;
+              const matchId = entry.mid;
+
+              const prev = existingMap[matchId];
+              if (prev && prev.s1 === s1 && prev.s2 === s2) {
+                // déjà à jour
+                continue;
+              }
 
               console.log(`${matchId}: ${home} ${s1}-${s2} ${away}`);
 
-              // Upsert dans Resultats
-              if (existingMap[matchId]) {
-                await atFetch('PATCH', `Resultats/${existingMap[matchId]}`, {
+              if (prev) {
+                await atFetch('PATCH', `Resultats/${prev.id}`, {
                   fields: { MatchId: matchId, Score1: s1, Score2: s2 }
                 });
                 updated++;
@@ -199,24 +225,25 @@ jobs:
                 const created_rec = await atFetch('POST', 'Resultats', {
                   records: [{ fields: { MatchId: matchId, Score1: s1, Score2: s2 } }]
                 });
-                existingMap[matchId] = created_rec.records?.[0]?.id;
+                existingMap[matchId] = { id: created_rec.records?.[0]?.id, s1, s2 };
                 created++;
               }
 
-              // Calcule les points pour chaque prono de ce match
+              await sleep(250); // évite de spammer l'API Airtable
+
+              // Recalcule les points pour ce match
               const matchPronos = pronos.filter(p => p.fields.MatchId === matchId);
               for (const prono of matchPronos) {
                 const pts = (prono.fields.Score1 === s1 && prono.fields.Score2 === s2) ? 3 : 0;
                 if (prono.fields.Points !== pts) {
-                  await atFetch('PATCH', `Pronostics/${prono.id}`, {
-                    fields: { Points: pts }
-                  });
+                  await atFetch('PATCH', `Pronostics/${prono.id}`, { fields: { Points: pts } });
                   pointsUpdated++;
+                  await sleep(250);
                 }
               }
             }
 
-            console.log(`Done! Created: ${created}, Updated: ${updated}, Points updated: ${pointsUpdated}`);
+            console.log(`Done! Matched: ${matched}/${matches.length}, Created: ${created}, Updated: ${updated}, Points updated: ${pointsUpdated}`);
           }
 
           main().catch(err => { console.error(err); process.exit(1); });
