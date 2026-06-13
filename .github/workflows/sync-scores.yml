@@ -19,14 +19,16 @@ jobs:
           const https = require('https');
 
           // Normalise un nom d'équipe pour le matching :
-          // enlève accents, &/and, espaces, tirets, casse
+          // enlève accents, "and"/"&"/tirets/espaces, casse
           function norm(s) {
             return s
               .toLowerCase()
               .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // accents
+              .replace(/&/g, ' and ')
+              .replace(/-/g, ' ')
+              .replace(/\band\b/g, '')
               .replace(/\bthe\b/g, '')
-              .replace(/&/g, 'and')
-              .replace(/[^a-z0-9]/g, ''); // tout le reste
+              .replace(/[^a-z0-9]/g, ''); // tout le reste (espaces, apostrophes...)
           }
 
           // Pour chaque match : [équipe1, équipe2] avec les noms tels qu'utilisés
