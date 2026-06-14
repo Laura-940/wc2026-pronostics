@@ -81,7 +81,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .btn.sm{padding:6px 12px;font-size:11px}
 .btn.ghost{background:transparent;border-color:var(--border);color:var(--muted)}
 .btn:disabled{opacity:.4;cursor:not-allowed}
-.stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:14px 16px}
+.stats{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin:14px 16px}
 .stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:12px;text-align:center}
 .stat-val{font-size:26px;font-weight:900;color:var(--neon)}
 .stat-lbl{font-size:10px;font-weight:600;color:var(--muted);margin-top:2px;text-transform:uppercase;letter-spacing:.04em}
@@ -463,7 +463,8 @@ function rMatches(){
 function rCard(m){
   const st=status(m),p=S.pronos[m.id]?.[S.pseudo],res=S.results[m.id];
   const k1=m.id+'_1',k2=m.id+'_2',loading=S.lm===m.id;
-  const correct=res&&p&&p.s1===res.s1&&p.s2===res.s2;
+  const correct=res&&p&&((res.s1>res.s2&&p.s1>p.s2)||(res.s1<res.s2&&p.s1<p.s2)||(res.s1===res.s2&&p.s1===p.s2));
+  const exact=res&&p&&p.s1===res.s1&&p.s2===res.s2;
   const nbp=Object.keys(S.pronos[m.id]||{}).length;
   const tod=isToday(m);
   // Editing mode : soit pas de prono, soit en train de modifier
@@ -503,7 +504,7 @@ function rCard(m){
     // Match clôturé ou terminé
     const nbpTxt=nbp?`<span style="font-size:10px;color:var(--muted)">${nbp}👤</span>`:'';
     if(p){
-      pronoZone=`<div class="mcard-prono" style="justify-content:space-between"><div style="font-size:12px;color:var(--muted)">Ton prono : <b style="color:${correct?'var(--neon)':'var(--text)'}">${p.s1}-${p.s2}</b>${correct?' 🎯':''}</div>${nbpTxt}</div>`;
+      pronoZone=`<div class="mcard-prono" style="justify-content:space-between"><div style="font-size:12px;color:var(--muted)">Ton prono : <b style="color:${correct?'var(--neon)':'var(--text)'}">${p.s1}-${p.s2}</b>${exact?' 🎯 +4':correct?' ✅':''}</div>${nbpTxt}</div>`;
     } else {
       pronoZone=`<div class="mcard-prono" style="justify-content:space-between"><div style="font-size:11px;color:var(--muted);font-style:italic">Pas de prono soumis</div>${nbpTxt}</div>`;
     }
@@ -528,8 +529,9 @@ function rMine(){
   const mm=M.filter(m=>S.pronos[m.id]?.[S.pseudo]);
   if(!mm.length) return`<div class="empty"><span class="empty-icon">📋</span><div class="empty-text">Aucun prono pour l'instant</div><div class="empty-sub">Va dans l'onglet Matchs et fais tes premiers pronos !</div></div>`;
   const total=mm.reduce((a,m)=>a+(S.pronos[m.id]?.[S.pseudo]?.pts||0),0);
-  const hits=mm.filter(m=>{const p=S.pronos[m.id]?.[S.pseudo],r=S.results[m.id];return r&&p&&p.s1===r.s1&&p.s2===r.s2}).length;
-  return `<div class="stats"><div class="stat"><div class="stat-val">${mm.length}</div><div class="stat-lbl">Pronos</div></div><div class="stat"><div class="stat-val">${hits}</div><div class="stat-lbl">Exacts 🎯</div></div><div class="stat"><div class="stat-val" style="color:var(--yellow)">${total}</div><div class="stat-lbl">Points</div></div></div>${mm.map(m=>{const p=S.pronos[m.id][S.pseudo],r=S.results[m.id],ok=r&&p.s1===r.s1&&p.s2===r.s2,st=status(m),canModify=st==="open";return `<div class="mycard"><div class="mycard-hdr"><span class="mycard-match">${ff(m.t1)} ${m.t1} vs ${m.t2} ${ff(m.t2)}</span>${ok?"<span class=\"badge b-open\">🎯 +3</span>":st==="played"?"<span class=\"badge\" style=\"background:var(--surface2);border-color:var(--border);color:var(--muted)\">0 pt</span>":st==="closed"?"<span class=\"badge b-closed\">🔒 Clôturé</span>":"<span class=\"badge b-played\">En attente</span>"}</div><div class="mycard-meta" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px"><span>${fdate(m)} ${m.time} · Prono&nbsp;: <b style="color:var(--text)">${p.s1}-${p.s2}</b>${r?` · Résultat&nbsp;: <b style="color:${ok?"var(--neon)":"var(--red)"}">${r.s1}-${r.s2}</b>`:""}</span>${canModify?`<button class="btn sm" style="border-color:var(--border2);color:var(--muted2);font-size:11px" onclick="goEditMatch(\"${m.id}\")">✏️ Modifier</button>`:""}</div></div>`;}).join("")}`;
+  const hits=mm.filter(m=>{const p=S.pronos[m.id]?.[S.pseudo],r=S.results[m.id];if(!r||!p)return false;return(r.s1>r.s2&&p.s1>p.s2)||(r.s1<r.s2&&p.s1<p.s2)||(r.s1===r.s2&&p.s1===p.s2);}).length;
+  const exactHits=mm.filter(m=>{const p=S.pronos[m.id]?.[S.pseudo],r=S.results[m.id];return r&&p&&p.s1===r.s1&&p.s2===r.s2}).length;
+  return `<div class="stats"><div class="stat"><div class="stat-val">${mm.length}</div><div class="stat-lbl">Pronos</div></div><div class="stat"><div class="stat-val">${hits}</div><div class="stat-lbl">Bons résultats ✅</div></div><div class="stat"><div class="stat-val">${exactHits}</div><div class="stat-lbl">Scores exacts 🎯</div></div><div class="stat"><div class="stat-val" style="color:var(--yellow)">${total}</div><div class="stat-lbl">Points</div></div></div>${mm.map(m=>{const p=S.pronos[m.id][S.pseudo],r=S.results[m.id],ok=r&&p.s1===r.s1&&p.s2===r.s2,st=status(m),canModify=st==="open";return `<div class="mycard"><div class="mycard-hdr"><span class="mycard-match">${ff(m.t1)} ${m.t1} vs ${m.t2} ${ff(m.t2)}</span>${ok?"<span class=\"badge b-open\">🎯 +4</span>":isCorrect&&!isExact?"<span class=\"badge b-open\">✅ +3</span>":st==="played"?"<span class=\"badge\" style=\"background:var(--surface2);border-color:var(--border);color:var(--muted)\">0 pt</span>":st==="closed"?"<span class=\"badge b-closed\">🔒 Clôturé</span>":"<span class=\"badge b-played\">En attente</span>"}</div><div class="mycard-meta" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px"><span>${fdate(m)} ${m.time} · Prono&nbsp;: <b style="color:var(--text)">${p.s1}-${p.s2}</b>${r?` · Résultat&nbsp;: <b style="color:${isExact?"var(--neon)":isCorrect?"var(--yellow)":"var(--red)"}">${r.s1}-${r.s2}</b>`:""}</span>${canModify?`<button class="btn sm" style="border-color:var(--border2);color:var(--muted2);font-size:11px" onclick="goEditMatch(\"${m.id}\")">✏️ Modifier</button>`:""}</div></div>`;}).join("")}`;
 }
 
 function rAll(){
@@ -542,7 +544,7 @@ function rAll(){
 function rLB(){
   if(!S.lb.length) return`<div class="empty"><span class="empty-icon">🏆</span><div class="empty-text">Classement vide</div><div class="empty-sub">Les points s'accumulent après chaque match joué !</div></div>`;
   const med=['🥇','🥈','🥉'],cls=['top1','top2','top3'];
-  return`<div class="lb">${S.lb.map((r,i)=>`<div class="lb-row ${cls[i]||''} ${r.p===S.pseudo?'lb-me':''}"><span class="lb-rank">${med[i]||'#'+(i+1)}</span><div class="avatar" style="${i===0?'border-color:var(--yellow);color:var(--yellow)':r.p===S.pseudo?'border-color:var(--neon)':''}">${r.p.substring(0,2).toUpperCase()}</div><div class="lb-info"><div class="lb-name">${r.p}${r.p===S.pseudo?' <span style="font-size:10px;color:var(--neon)">(toi)</span>':''}</div><div class="lb-sub">${r.nb} prono${r.nb>1?'s':''}</div></div><div><div class="lb-pts" style="${i===0?'color:var(--yellow)':''}">${r.pt}</div><div class="lb-pts-lbl">pts</div></div></div>`).join('')}<p style="font-size:11px;color:var(--muted);text-align:center;padding:12px 0">3 pts par score exact · Clôture 20 min avant chaque match</p></div>`;
+  return`<div class="lb">${S.lb.map((r,i)=>`<div class="lb-row ${cls[i]||''} ${r.p===S.pseudo?'lb-me':''}"><span class="lb-rank">${med[i]||'#'+(i+1)}</span><div class="avatar" style="${i===0?'border-color:var(--yellow);color:var(--yellow)':r.p===S.pseudo?'border-color:var(--neon)':''}">${r.p.substring(0,2).toUpperCase()}</div><div class="lb-info"><div class="lb-name">${r.p}${r.p===S.pseudo?' <span style="font-size:10px;color:var(--neon)">(toi)</span>':''}</div><div class="lb-sub">${r.nb} prono${r.nb>1?'s':''}</div></div><div><div class="lb-pts" style="${i===0?'color:var(--yellow)':''}">${r.pt}</div><div class="lb-pts-lbl">pts</div></div></div>`).join('')}<p style="font-size:11px;color:var(--muted);text-align:center;padding:12px 0">3 pts bon vainqueur/nul · +1 pt bonus si score exact (4 pts max) · Clôture 20 min avant</p></div>`;
 }
 
 function rLogin(){
