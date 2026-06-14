@@ -236,7 +236,10 @@ jobs:
               // Recalcule les points pour ce match
               const matchPronos = pronos.filter(p => p.fields.MatchId === matchId);
               for (const prono of matchPronos) {
-                const pts = (prono.fields.Score1 === s1 && prono.fields.Score2 === s2) ? 3 : 0;
+                const ps1 = prono.fields.Score1; const ps2 = prono.fields.Score2;
+                const exactScore = ps1 === s1 && ps2 === s2;
+                const correctResult = (s1 > s2 && ps1 > ps2) || (s1 < s2 && ps1 < ps2) || (s1 === s2 && ps1 === ps2);
+                const pts = correctResult ? (exactScore ? 4 : 3) : 0;
                 if (prono.fields.Points !== pts) {
                   await atFetch('PATCH', `Pronostics/${prono.id}`, { fields: { Points: pts } });
                   pointsUpdated++;
