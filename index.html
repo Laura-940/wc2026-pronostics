@@ -201,7 +201,7 @@ const M=[
   // ─── GROUPE D ───────────────────────────────────────────────
   {id:'m020',g:'D',date:'2026-06-14',time:'06:00',t1:'Australie',t2:'Turquie',v:'Vancouver'},
   {id:'m021',g:'D',date:'2026-06-20',time:'06:00',t1:'Turquie',t2:'Paraguay',v:'Santa Clara'},
-  {id:'m022',g:'D',date:'2026-06-20',time:'21:00',t1:'États-Unis',t2:'Australie',v:'Seattle'},
+  {id:'m022',g:'D',date:'2026-06-19',time:'21:00',t1:'États-Unis',t2:'Australie',v:'Seattle'},
   {id:'m023',g:'D',date:'2026-06-26',time:'04:00',t1:'Turquie',t2:'États-Unis',v:'Los Angeles'},
   {id:'m024',g:'D',date:'2026-06-26',time:'04:00',t1:'Paraguay',t2:'Australie',v:'Santa Clara'},
   // ─── GROUPE E ───────────────────────────────────────────────
@@ -456,10 +456,24 @@ function rMatches(){
     if(!filtered.length){
       content=`<div class="empty-match">Aucun match cette semaine 😴<br><small style="color:var(--muted)">Utilise "Tous les matchs" pour voir le calendrier complet</small></div>`;
     } else {
-      content=getWeekGroups(filtered).map(([date,matches])=>`
-        <div class="week-label">${fdateLong(date)}</div>
-        ${matches.map(m=>rCard(m)).join('')}
-      `).join('');
+      content=getWeekGroups(filtered).map(([date,matches])=>{
+        const dateStr=new Date(date+'T12:00:00').toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
+        const cap=dateStr.charAt(0).toUpperCase()+dateStr.slice(1);
+        const accId='match_'+date.replace(/-/g,'');
+        const isOpen=S.accOpen?.[accId]!==false;
+        // Auto-ouvrir les jours avec matchs ouverts ou aujourd'hui
+        const hasOpen=matches.some(m=>status(m)==='open'||isToday(m));
+        const finalOpen = S.accOpen?.[accId]!==undefined ? isOpen : (hasOpen||date===new Date().toISOString().slice(0,10));
+        return `<div>
+          <div class="acc-date" onclick="toggleAcc('${accId}')">
+            <span>${hasOpen?'🔥':''} ${cap}</span>
+            <span class="acc-arrow ${finalOpen?'open':''}" id="arr_${accId}">⌄</span>
+          </div>
+          <div class="acc-body ${finalOpen?'opened':'closed'}" id="body_${accId}">
+            ${matches.map(m=>rCard(m)).join('')}
+          </div>
+        </div>`;
+      }).join('');
     }
   } else {
     content=filtered.length?filtered.map(m=>rCard(m)).join(''):`<div class="empty-match">Aucun match dans cette catégorie</div>`;
