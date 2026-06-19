@@ -309,7 +309,7 @@ function getMonday(d){ const day=d.getDay(); const diff=d.getDate()-(day===0?6:d
 function getSunday(d){ const mon=getMonday(d); const s=new Date(mon); s.setDate(mon.getDate()+6); s.setHours(23,59,59,999); return s; }
 function isToday(m){ const t=todayLocal(), md=new Date(m.date+'T12:00:00'); md.setHours(0,0,0,0); return md.getTime()===t.getTime(); }
 function isThisWeek(m){ const now=new Date(), mon=getMonday(now), sun=getSunday(now), md=new Date(m.date+'T12:00:00'); return md>=mon && md<=sun; }
-function getWeekGroups(matches){ const g={}; for(const m of matches){ if(!g[m.date])g[m.date]=[]; g[m.date].push(m); } return Object.entries(g).sort(([a],[b])=>a.localeCompare(b)); }
+function getWeekGroups(matches){ const g={}; for(const m of matches){ if(!g[m.date])g[m.date]=[]; g[m.date].push(m); } return Object.entries(g).sort(([a],[b])=>a.localeCompare(b)).map(([date,ms])=>[date,ms.sort((a,b)=>a.time.localeCompare(b.time))]); }
 function fdate(m){ return new Date(m.date+'T12:00:00').toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'}); }
 function fdateLong(dateStr){
   const d=new Date(dateStr+'T12:00:00');
