@@ -21,14 +21,71 @@ jobs:
           // Normalise un nom d'équipe pour le matching :
           // enlève accents, "and"/"&"/tirets/espaces, casse
           function norm(s) {
-            return s
-              .toLowerCase()
-              .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // accents
-              .replace(/&/g, ' and ')
-              .replace(/-/g, ' ')
-              .replace(/\band\b/g, '')
-              .replace(/\bthe\b/g, '')
-              .replace(/[^a-z0-9]/g, ''); // tout le reste (espaces, apostrophes...)
+            // Traduction anglais API -> français notre app
+            const aliases = {
+              'ivory coast': 'cotedivoire',
+              'cape verde islands': 'capvert',
+              'cape verde': 'capvert',
+              'congo dr': 'rdcongo',
+              'dr congo': 'rdcongo',
+              'scotland': 'ecosse',
+              'france': 'france',
+              'spain': 'espagne',
+              'germany': 'allemagne',
+              'netherlands': 'paysbas',
+              'brazil': 'bresil',
+              'morocco': 'maroc',
+              'haiti': 'haiti',
+              'australia': 'australie',
+              'turkey': 'turquie',
+              'switzerland': 'suisse',
+              'sweden': 'suede',
+              'tunisia': 'tunisie',
+              'belgium': 'belgique',
+              'egypt': 'egypte',
+              'iran': 'iran',
+              'new zealand': 'nouvellezélande',
+              'norway': 'norvege',
+              'senegal': 'senegal',
+              'argentina': 'argentine',
+              'algeria': 'algerie',
+              'austria': 'autriche',
+              'jordan': 'jordanie',
+              'portugal': 'portugal',
+              'england': 'angleterre',
+              'croatia': 'croatie',
+              'ghana': 'ghana',
+              'panama': 'panama',
+              'uzbekistan': 'ouzbekistan',
+              'colombia': 'colombie',
+              'ecuador': 'equateur',
+              'curacao': 'curacao',
+              'japan': 'japon',
+              'saudi arabia': 'arabiesaoudite',
+              'uruguay': 'uruguay',
+              'iraq': 'irak',
+              'south africa': 'afriquedusud',
+              'south korea': 'coreedusud',
+              'czechia': 'reptcheque',
+              'czech republic': 'reptcheque',
+              'canada': 'canada',
+              'qatar': 'qatar',
+              'mexico': 'mexique',
+              'usa': 'etatsuni',
+              'united states': 'etatsuni',
+              'paraguay': 'paraguay',
+              'bosnia and herzegovina': 'bosnieherzégovine',
+              'bosnia-herzegovina': 'bosnieherzégovine',
+              'bosnia herzegovina': 'bosnieherzégovine',
+            };
+            let r = s.toLowerCase().trim();
+            // Cherche le plus long alias qui correspond
+            for (const [k,v] of Object.entries(aliases).sort((a,b)=>b[0].length-a[0].length)) {
+              if (r === k || r.includes(k)) { r = r.replace(k, v); break; }
+            }
+            return r
+              .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+              .replace(/[^a-z0-9]/g, '');
           }
 
           // Pour chaque match : [équipe1, équipe2] avec les noms tels qu'utilisés
