@@ -228,6 +228,7 @@ jobs:
 
             const matches = (res.body.matches || []).filter(m => m.status === 'FINISHED');
             console.log(`Found ${matches.length} finished matches from API`);
+            matches.slice(0,10).forEach(m => console.log(JSON.stringify({home: m.homeTeam?.name, away: m.awayTeam?.name, score: m.score?.fullTime})));
 
             // Récupère les résultats déjà dans Airtable
             const existing = await atFetch('GET', 'Resultats?pageSize=100');
