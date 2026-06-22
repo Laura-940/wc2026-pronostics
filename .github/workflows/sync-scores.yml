@@ -21,7 +21,7 @@ jobs:
           function norm(s) {
             const aliases = {
               'ivory coast': 'cotedivoire',
-              "cote d'ivoire": 'cotedivoire',
+              "cote d ivoire": 'cotedivoire',
               'cape verde islands': 'capvert',
               'cape verde': 'capvert',
               'congo dr': 'rdcongo',
@@ -43,7 +43,7 @@ jobs:
               'belgium': 'belgique',
               'egypt': 'egypte',
               'iran': 'iran',
-              'new zealand': 'nouvellezélande',
+              'new zealand': 'nouvellezeland',
               'norway': 'norvege',
               'senegal': 'senegal',
               'argentina': 'argentine',
@@ -73,9 +73,9 @@ jobs:
               'usa': 'etatsuni',
               'united states': 'etatsuni',
               'paraguay': 'paraguay',
-              'bosnia and herzegovina': 'bosnieherzégovine',
-              'bosnia-herzegovina': 'bosnieherzégovine',
-              'bosnia herzegovina': 'bosnieherzégovine',
+              'bosnia and herzegovina': 'bosnieherzegovine',
+              'bosnia-herzegovina': 'bosnieherzegovine',
+              'bosnia herzegovina': 'bosnieherzegovine',
             };
             let r = s.toLowerCase().trim();
             for (const [k,v] of Object.entries(aliases).sort((a,b)=>b[0].length-a[0].length)) {
@@ -111,12 +111,12 @@ jobs:
             m022: ['United States', 'Australia'],
             m023: ['Turkey', 'United States'],
             m024: ['Paraguay', 'Australia'],
-            m025: ['Germany', 'Curaçao'],
-            m026: ["Côte d'Ivoire", 'Ecuador'],
+            m025: ['Germany', 'Curacao'],
+            m026: ["Cote d Ivoire", 'Ecuador'],
             m027: ['Netherlands', 'Japan'],
-            m028: ['Germany', "Côte d'Ivoire"],
-            m029: ['Ecuador', 'Curaçao'],
-            m030: ['Curaçao', "Côte d'Ivoire"],
+            m028: ['Germany', "Cote d Ivoire"],
+            m029: ['Ecuador', 'Curacao'],
+            m030: ['Curacao', "Cote d Ivoire"],
             m031: ['Ecuador', 'Germany'],
             m032: ['Sweden', 'Tunisia'],
             m033: ['Netherlands', 'Sweden'],
@@ -224,26 +224,25 @@ jobs:
               process.exit(1);
             }
 
-            const allMatches = res.body.response || []; console.log('API response status:', res.status);
-console.log('API body sample:', JSON.stringify(res.body).slice(0, 500));
+            const allMatches = res.body.response || [];
             const matches = allMatches.filter(m => m.fixture?.status?.short === 'FT');
             console.log(`Found ${matches.length} finished matches from API (total: ${allMatches.length})`);
 
-            // Debug: affiche les 5 premiers matchs terminés
+            // Debug: affiche les 5 premiers matchs termines
             matches.slice(0,5).forEach(m => console.log(JSON.stringify({
               home: m.teams?.home?.name,
               away: m.teams?.away?.name,
               score: { home: m.goals?.home, away: m.goals?.away }
             })));
 
-            // Récupère les résultats déjà dans Airtable
+            // Recupere les resultats deja dans Airtable
             const existing = await atFetch('GET', 'Resultats?pageSize=100');
             const existingMap = {};
             for (const r of (existing.records || [])) {
               existingMap[r.fields.MatchId] = { id: r.id, s1: r.fields.Score1, s2: r.fields.Score2 };
             }
 
-            // Récupère tous les pronos
+            // Recupere tous les pronos
             let pronos = [], off = '';
             do {
               const d = await atFetch('GET', `Pronostics?pageSize=100${off ? '&offset=' + off : ''}`);
