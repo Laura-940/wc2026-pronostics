@@ -224,7 +224,8 @@ jobs:
               process.exit(1);
             }
 
-            const allMatches = res.body.response || [];
+            const allMatches = res.body.response || []; console.log('API response status:', res.status);
+console.log('API body sample:', JSON.stringify(res.body).slice(0, 500));
             const matches = allMatches.filter(m => m.fixture?.status?.short === 'FT');
             console.log(`Found ${matches.length} finished matches from API (total: ${allMatches.length})`);
 
