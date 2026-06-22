@@ -11,19 +11,17 @@ jobs:
     steps:
       - name: Sync World Cup scores to Airtable
         env:
-          FOOTBALL_TOKEN: ${{ secrets.FOOTBALL_DATA_TOKEN }}
+          API_FOOTBALL_TOKEN: ${{ secrets.API_FOOTBALL_TOKEN }}
           AIRTABLE_TOKEN: ${{ secrets.AIRTABLE_TOKEN }}
           BASE_ID: app6kZ7JVeTWarmFR
         run: |
           node << 'EOF'
           const https = require('https');
 
-          // Normalise un nom d'équipe pour le matching :
-          // enlève accents, "and"/"&"/tirets/espaces, casse
           function norm(s) {
-            // Traduction anglais API -> français notre app
             const aliases = {
               'ivory coast': 'cotedivoire',
+              "cote d'ivoire": 'cotedivoire',
               'cape verde islands': 'capvert',
               'cape verde': 'capvert',
               'congo dr': 'rdcongo',
@@ -38,6 +36,7 @@ jobs:
               'haiti': 'haiti',
               'australia': 'australie',
               'turkey': 'turquie',
+              'turkiye': 'turquie',
               'switzerland': 'suisse',
               'sweden': 'suede',
               'tunisia': 'tunisie',
@@ -79,7 +78,6 @@ jobs:
               'bosnia herzegovina': 'bosnieherzégovine',
             };
             let r = s.toLowerCase().trim();
-            // Cherche le plus long alias qui correspond
             for (const [k,v] of Object.entries(aliases).sort((a,b)=>b[0].length-a[0].length)) {
               if (r === k || r.includes(k)) { r = r.replace(k, v); break; }
             }
@@ -88,8 +86,6 @@ jobs:
               .replace(/[^a-z0-9]/g, '');
           }
 
-          // Pour chaque match : [équipe1, équipe2] avec les noms tels qu'utilisés
-          // par football-data.org (anglais). La normalisation gère les variantes.
           const MATCHES = {
             m001: ['Mexico', 'South Africa'],
             m002: ['South Korea', 'Czechia'],
@@ -165,17 +161,23 @@ jobs:
             m072: ['Colombia', 'Ghana'],
           };
 
-          // Index normalisé : norm(team1)+'_'+norm(team2) -> matchId, avec ordre connu
           const INDEX = {};
           for (const [mid, [t1, t2]] of Object.entries(MATCHES)) {
             INDEX[norm(t1) + '_' + norm(t2)] = { mid, swapped: false };
             INDEX[norm(t2) + '_' + norm(t1)] = { mid, swapped: true };
           }
 
-          function fetch(url, headers) {
+          function apiFetch(path) {
             return new Promise((resolve, reject) => {
-              const opts = new URL(url);
-              https.get({ hostname: opts.hostname, path: opts.pathname + opts.search, headers }, res => {
+              const opts = {
+                hostname: 'v3.football.api-sports.io',
+                path,
+                method: 'GET',
+                headers: {
+                  'x-apisports-key': process.env.API_FOOTBALL_TOKEN
+                }
+              };
+              https.get(opts, res => {
                 let data = '';
                 res.on('data', chunk => data += chunk);
                 res.on('end', () => {
@@ -213,22 +215,25 @@ jobs:
           function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
 
           async function main() {
-            console.log('Fetching World Cup matches from football-data.org...');
+            console.log('Fetching World Cup 2026 matches from api-football.com...');
 
-            // Récupère TOUS les matchs de la Coupe du Monde (compétition 2000)
-            const res = await fetch(
-              'https://api.football-data.org/v4/competitions/2000/matches?season=2026',
-              { 'X-Auth-Token': process.env.FOOTBALL_TOKEN }
-            );
+            const res = await apiFetch('/fixtures?league=1&season=2026');
 
             if (res.status !== 200) {
               console.error('API error:', res.status, JSON.stringify(res.body).slice(0,500));
               process.exit(1);
             }
 
-            const matches = (res.body.matches || []).filter(m => m.status === 'FINISHED');
-            console.log(`Found ${matches.length} finished matches from API`);
-            matches.slice(0,10).forEach(m => console.log(JSON.stringify({home: m.homeTeam?.name, away: m.awayTeam?.name, score: m.score?.fullTime})));
+            const allMatches = res.body.response || [];
+            const matches = allMatches.filter(m => m.fixture?.status?.short === 'FT');
+            console.log(`Found ${matches.length} finished matches from API (total: ${allMatches.length})`);
+
+            // Debug: affiche les 5 premiers matchs terminés
+            matches.slice(0,5).forEach(m => console.log(JSON.stringify({
+              home: m.teams?.home?.name,
+              away: m.teams?.away?.name,
+              score: { home: m.goals?.home, away: m.goals?.away }
+            })));
 
             // Récupère les résultats déjà dans Airtable
             const existing = await atFetch('GET', 'Resultats?pageSize=100');
@@ -249,8 +254,8 @@ jobs:
             let updated = 0, created = 0, pointsUpdated = 0, matched = 0;
 
             for (const match of matches) {
-              const home = match.homeTeam?.name || match.homeTeam?.shortName || '';
-              const away = match.awayTeam?.name || match.awayTeam?.shortName || '';
+              const home = match.teams?.home?.name || '';
+              const away = match.teams?.away?.name || '';
               const key = norm(home) + '_' + norm(away);
               const entry = INDEX[key];
 
@@ -260,8 +265,8 @@ jobs:
               }
               matched++;
 
-              const score1 = match.score?.fullTime?.home;
-              const score2 = match.score?.fullTime?.away;
+              const score1 = match.goals?.home;
+              const score2 = match.goals?.away;
               if (score1 === null || score1 === undefined || score2 === null || score2 === undefined) continue;
 
               const s1 = entry.swapped ? score2 : score1;
@@ -269,10 +274,7 @@ jobs:
               const matchId = entry.mid;
 
               const prev = existingMap[matchId];
-              if (prev && prev.s1 === s1 && prev.s2 === s2) {
-                // déjà à jour
-                continue;
-              }
+              if (prev && prev.s1 === s1 && prev.s2 === s2) continue;
 
               console.log(`${matchId}: ${home} ${s1}-${s2} ${away}`);
 
@@ -289,9 +291,8 @@ jobs:
                 created++;
               }
 
-              await sleep(250); // évite de spammer l'API Airtable
+              await sleep(250);
 
-              // Recalcule les points pour ce match
               const matchPronos = pronos.filter(p => p.fields.MatchId === matchId);
               for (const prono of matchPronos) {
                 const ps1 = prono.fields.Score1; const ps2 = prono.fields.Score2;
