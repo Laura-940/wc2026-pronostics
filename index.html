@@ -543,6 +543,26 @@ function rCard(m){
   </div>`;
 }
 
+function rMineCard(m){
+  const p=S.pronos[m.id][S.pseudo],r=S.results[m.id],pts=p.pts||0,st=status(m);
+  const canModify=st==='open',isEx=pts===4,isCor=pts>=3;
+  let badge='';
+  if(isEx) badge='<span class="badge b-open">🎯 +4</span>';
+  else if(isCor) badge='<span class="badge b-open">✅ +3</span>';
+  else if(st==='played') badge='<span class="badge" style="background:var(--surface2);border-color:var(--border);color:var(--muted)">0 pt</span>';
+  else if(st==='closed') badge='<span class="badge b-closed">🔒 Clôturé</span>';
+  else badge='<span class="badge b-played">En attente</span>';
+  let res='';
+  if(r) res=' · Résultat&nbsp;: <b style="color:'+(isEx?'var(--neon)':isCor?'var(--yellow)':'var(--red)')+'">'+r.s1+'-'+r.s2+'</b>';
+  let modBtn='';
+  if(canModify) modBtn='<button class="btn sm" style="border-color:var(--border2);color:var(--muted2);font-size:11px" onclick="goEditMatch(\''+m.id+'\')">✏️ Modifier</button>';
+  return '<div class="mycard">'
+    +'<div class="mycard-hdr"><span class="mycard-match">'+ff(m.t1)+' '+m.t1+' vs '+m.t2+' '+ff(m.t2)+'</span>'+badge+'</div>'
+    +'<div class="mycard-meta" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px">'
+    +'<span>'+m.time+' · Prono&nbsp;: <b style="color:var(--text)">'+p.s1+'-'+p.s2+'</b>'+res+'</span>'
+    +modBtn
+    +'</div></div>';
+}
 function rMine(){
   const mm=M.filter(m=>S.pronos[m.id]?.[S.pseudo]).sort((a,b)=>a.date.localeCompare(b.date)||a.time.localeCompare(b.time));
   if(!mm.length) return`<div class="empty"><span class="empty-icon">📋</span><div class="empty-text">Aucun prono pour l'instant</div><div class="empty-sub">Va dans l'onglet Matchs et fais tes premiers pronos !</div></div>`;
@@ -563,7 +583,7 @@ function rMine(){
         <span class="acc-arrow ${isOpen?'open':''}" id="arr_${accId}">⌄</span>
       </div>
       <div class="acc-body ${isOpen?'opened':'closed'}" id="body_${accId}">
-        ${matches.map(m=>{const p=S.pronos[m.id][S.pseudo],r=S.results[m.id],pts=p.pts||0,st=status(m),canModify=st==="open",isEx=pts===4,isCor=pts>=3;return `<div class="mycard"><div class="mycard-hdr"><span class="mycard-match">${ff(m.t1)} ${m.t1} vs ${m.t2} ${ff(m.t2)}</span>${isEx?"<span class=\"badge b-open\">🎯 +4</span>":isCor?"<span class=\"badge b-open\">✅ +3</span>":st==="played"?"<span class=\"badge\" style=\"background:var(--surface2);border-color:var(--border);color:var(--muted)\">0 pt</span>":st==="closed"?"<span class=\"badge b-closed\">🔒 Clôturé</span>":"<span class=\"badge b-played\">En attente</span>"}</div><div class="mycard-meta" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px"><span>${m.time} · Prono&nbsp;: <b style="color:var(--text)">${p.s1}-${p.s2}</b>${r?` · Résultat&nbsp;: <b style="color:${isEx?"var(--neon)":isCor?"var(--yellow)":"var(--red)"}">${r.s1}-${r.s2}</b>`:""}</span>${canModify?`<button class="btn sm" style="border-color:var(--border2);color:var(--muted2);font-size:11px" onclick="goEditMatch(\"${m.id}\")">✏️ Modifier</button>`:""}</div></div>`;}).join('')}
+        ${matches.map(m=>rMineCard(m)).join('')}
       </div>
     </div>`;
   }).join('');
