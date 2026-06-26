@@ -546,22 +546,36 @@ function rCard(m){
 function rMineCard(m){
   const p=S.pronos[m.id][S.pseudo],r=S.results[m.id],pts=p.pts||0,st=status(m);
   const canModify=st==='open',isEx=pts===4,isCor=pts>=3;
+  const editing=S.editing===m.id;
+  const k1=m.id+'_1',k2=m.id+'_2',loading=S.lm===m.id;
   let badge='';
   if(isEx) badge='<span class="badge b-open">🎯 +4</span>';
   else if(isCor) badge='<span class="badge b-open">✅ +3</span>';
   else if(st==='played') badge='<span class="badge" style="background:var(--surface2);border-color:var(--border);color:var(--muted)">0 pt</span>';
   else if(st==='closed') badge='<span class="badge b-closed">🔒 Clôturé</span>';
-  else badge='<span class="badge b-played">En attente</span>';
+  else badge='<span class="badge b-open">● Ouvert</span>';
   let res='';
-  if(r) res=' · Résultat&nbsp;: <b style="color:'+(isEx?'var(--neon)':isCor?'var(--yellow)':'var(--red)')+'">'+r.s1+'-'+r.s2+'</b>';
-  let modBtn='';
-  if(canModify) modBtn='<button class="btn sm" style="border-color:var(--border2);color:var(--muted2);font-size:11px" onclick="goEditMatch(\''+m.id+'\')">✏️ Modifier</button>';
+  if(r) res=' · Résultat : <b style="color:'+(isEx?'var(--neon)':isCor?'var(--yellow)':'var(--red)')+'">'+ r.s1+'-'+r.s2+'</b>';
+  let pronoZone='';
+  if(canModify && editing){
+    const v1=S.inp[k1]!==undefined?S.inp[k1]:p.s1;
+    const v2=S.inp[k2]!==undefined?S.inp[k2]:p.s2;
+    pronoZone='<div class="mcard-prono" style="margin-top:8px">'
+      +'<input class="sinp" type="number" min="0" max="20" placeholder="0" value="'+v1+'" oninput="S.inp[\''+ k1+'\']=this.value"/>'
+      +'<span class="sep">—</span>'
+      +'<input class="sinp" type="number" min="0" max="20" placeholder="0" value="'+v2+'" oninput="S.inp[\''+ k2+'\']=this.value"/>'
+      +(loading?'<button class="btn pri sm" disabled><span class="spin" style="width:14px;height:14px;border-width:2px;margin:0"></span></button>':'<button class="btn pri sm" style="flex-shrink:0" onclick="saveProno(\''+ m.id+'\')">✓ Valider</button>')
+      +'<button class="btn sm ghost" onclick="cancelEdit(\''+ m.id+'\')">Annuler</button>'
+      +'</div>';
+  } else {
+    const modBtn=canModify?'<button class="btn sm" style="border-color:var(--border2);color:var(--muted2);font-size:11px" onclick="startEdit(\''+ m.id+'\')">&#9999;&#65039; Modifier</button>':'';
+    pronoZone='<div class="mycard-meta" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px">'
+      +'<span>'+m.time+' · Prono : <b style="color:var(--text)">'+p.s1+'-'+p.s2+'</b>'+res+'</span>'
+      +modBtn+'</div>';
+  }
   return '<div class="mycard">'
     +'<div class="mycard-hdr"><span class="mycard-match">'+ff(m.t1)+' '+m.t1+' vs '+m.t2+' '+ff(m.t2)+'</span>'+badge+'</div>'
-    +'<div class="mycard-meta" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px">'
-    +'<span>'+m.time+' · Prono&nbsp;: <b style="color:var(--text)">'+p.s1+'-'+p.s2+'</b>'+res+'</span>'
-    +modBtn
-    +'</div></div>';
+    +pronoZone+'</div>';
 }
 function rMine(){
   const mm=M.filter(m=>S.pronos[m.id]?.[S.pseudo]).sort((a,b)=>a.date.localeCompare(b.date)||a.time.localeCompare(b.time));
