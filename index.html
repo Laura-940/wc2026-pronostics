@@ -374,6 +374,7 @@ async function saveProno(mid){
     if(!S.pronos[mid])S.pronos[mid]={};
     S.pronos[mid][S.pseudo]={s1,s2,pts:ex?.pts||0,rid:ex?.rid};
     delete S.inp[mid+'_1']; delete S.inp[mid+'_2'];
+    S.editing=null;
     toast('Prono enregistré ✓','s');
   } catch(e){ toast(e.message,'e'); }
   S.lm=null; render();
@@ -623,9 +624,9 @@ function toggleAcc(id){
 function st(t){S.tab=t;render();}
 function sf(f){S.filter=f;render();}
 function reload(){loadAll();}
-function startEdit(mid){S.editing=mid;render();setTimeout(()=>{const el=document.querySelector(".sinp");if(el)el.focus();},50);}
+function startEdit(mid){S.editing=mid;const p=S.pronos[mid]?.[S.pseudo];if(p){S.inp[mid+'_1']=String(p.s1);S.inp[mid+'_2']=String(p.s2);}render();setTimeout(()=>{const el=document.querySelector(".sinp");if(el)el.focus();},50);}
 function cancelEdit(mid){S.editing=null;delete S.inp[mid+"_1"];delete S.inp[mid+"_2"];render();}
-function goEditMatch(mid){S.tab="matches";S.filter="all";S.editing=mid;render();}
+function goEditMatch(mid){S.tab="matches";S.filter="all";S.editing=mid;const p=S.pronos[mid]?.[S.pseudo];if(p){S.inp[mid+'_1']=String(p.s1);S.inp[mid+'_2']=String(p.s2);}render();}
 
 function chkPwd(){
   const v=document.getElementById('ipwd')?.value?.trim();
