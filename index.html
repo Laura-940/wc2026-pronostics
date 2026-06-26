@@ -528,7 +528,7 @@ function rCard(m){
     }
   }
 
-  return `<div class="mcard ${tod&&st==='open'&&!p?'today':''}">
+  return `<div class="mcard ${tod&&st==='open'&&!p?'today':''}" data-mid="${m.id}">
     <div class="mcard-top">
       <div class="mcard-left">${tod&&st==='open'?'<span class="today-dot"></span>':''}<span class="mcard-round">${rl(m.g)}</span></div>
       <div style="display:flex;align-items:center;gap:6px"><span style="font-size:10px;color:var(--muted)">${m.time}</span>${badge}</div>
@@ -626,7 +626,7 @@ function sf(f){S.filter=f;render();}
 function reload(){loadAll();}
 function startEdit(mid){S.editing=mid;const p=S.pronos[mid]?.[S.pseudo];if(p){S.inp[mid+'_1']=String(p.s1);S.inp[mid+'_2']=String(p.s2);}render();setTimeout(()=>{const el=document.querySelector(".sinp");if(el)el.focus();},50);}
 function cancelEdit(mid){S.editing=null;delete S.inp[mid+"_1"];delete S.inp[mid+"_2"];render();}
-function goEditMatch(mid){S.tab="matches";S.filter="all";S.editing=mid;const p=S.pronos[mid]?.[S.pseudo];if(p){S.inp[mid+'_1']=String(p.s1);S.inp[mid+'_2']=String(p.s2);}render();}
+function goEditMatch(mid){S.tab="matches";S.filter="all";S.editing=mid;const p=S.pronos[mid]?.[S.pseudo];if(p){S.inp[mid+'_1']=String(p.s1);S.inp[mid+'_2']=String(p.s2);}const m=M.find(x=>x.id===mid);if(m){const accId='match_'+m.date.replace(/-/g,'');if(!S.accOpen)S.accOpen={};S.accOpen[accId]=true;}render();setTimeout(()=>{const card=document.querySelector('[data-mid="'+mid+'"]');if(card)card.scrollIntoView({behavior:'smooth',block:'center'});},150);}
 
 function chkPwd(){
   const v=document.getElementById('ipwd')?.value?.trim();
