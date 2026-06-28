@@ -294,7 +294,7 @@ const LS=k=>localStorage.getItem(k)||'';
 let S={
   step:LS('wc_pseudo')?'app':LS('wc_ok')?'pseudo':'login',
   pseudo:LS('wc_pseudo'),tab:'matches',filter:'week',
-  pronos:{},results:{},lb:[],inp:{},loading:false,lm:null,err:null,editing:null,
+  pronos:{},results:{},lb:[],inp:{},loading:false,lm:null,err:null,editing:null,team:null,
 };
 
 // ─── DATE HELPERS ─────────────────────────────────────────────
@@ -387,6 +387,7 @@ function render(){
   const root=document.getElementById('root');
   if(S.step==='login'){ root.innerHTML=rLogin(); return; }
   if(S.step==='pseudo'){ root.innerHTML=rPseudo(); return; }
+  if(S.team){ root.innerHTML=rTeam(); return; }
   const myP=M.filter(m=>S.pronos[m.id]?.[S.pseudo]);
   const myPts=myP.reduce((a,m)=>a+(S.pronos[m.id]?.[S.pseudo]?.pts||0),0);
   const myRank=S.lb.findIndex(r=>r.p===S.pseudo)+1;
@@ -511,7 +512,7 @@ function rCard(m){
       const v2=editing&&p?p.s2:S.inp[k2]??'';
       pronoZone=`
         <div class="mcard-prono">
-          <input class="sinp" type="number" min="0" max="20" placeholder="0" value="${v1}" oninput="S.inp['${k1}']=this.value"/>
+          <input class="sinp" type="number" min="0" max="20" placeholder="0" value="${v1}" oninput="S.inp['${k1}']=this.value;if(this.value!=='')this.closest('.mcard-prono').querySelectorAll('.sinp')[1].focus()"/>
           <span class="sep">—</span>
           <input class="sinp" type="number" min="0" max="20" placeholder="0" value="${v2}" oninput="S.inp['${k2}']=this.value"/>
           <button class="btn pri sm" style="flex-shrink:0" onclick="saveProno('${m.id}')" ${loading?'disabled':''}>${loading?'<span class="spin" style="width:14px;height:14px;border-width:2px;margin:0"></span>':'Valider ✓'}</button>
@@ -534,9 +535,9 @@ function rCard(m){
       <div style="display:flex;align-items:center;gap:6px"><span style="font-size:10px;color:var(--muted)">${m.time}</span>${badge}</div>
     </div>
     <div class="mcard-teams">
-      <div class="team"><span class="team-flag">${ff(m.t1)}</span><span class="team-name">${m.t1}</span></div>
+      <div class="team" onclick="openTeam('${m.t1}')" style="cursor:pointer"><span class="team-flag">${ff(m.t1)}</span><span class="team-name">${m.t1}</span></div>
       <div class="vsblock">${vsB}</div>
-      <div class="team"><span class="team-flag">${ff(m.t2)}</span><span class="team-name">${m.t2}</span></div>
+      <div class="team" onclick="openTeam('${m.t2}')" style="cursor:pointer"><span class="team-flag">${ff(m.t2)}</span><span class="team-name">${m.t2}</span></div>
     </div>
     <div class="mcard-venue">${m.v}</div>
     ${pronoZone}
@@ -561,7 +562,7 @@ function rMineCard(m){
     const v1=S.inp[k1]!==undefined?S.inp[k1]:p.s1;
     const v2=S.inp[k2]!==undefined?S.inp[k2]:p.s2;
     pronoZone='<div class="mcard-prono" style="margin-top:8px">'
-      +'<input class="sinp" type="number" min="0" max="20" placeholder="0" value="'+v1+'" oninput="S.inp[\''+ k1+'\']=this.value"/>'
+      +'<input class="sinp" type="number" min="0" max="20" placeholder="0" value="'+v1+'" oninput="S.inp[\''+ k1+'\']=this.value;if(this.value!==\'\')this.closest(\'.mcard-prono\').querySelectorAll(\'.sinp\')[1].focus()"/>'
       +'<span class="sep">—</span>'
       +'<input class="sinp" type="number" min="0" max="20" placeholder="0" value="'+v2+'" oninput="S.inp[\''+ k2+'\']=this.value"/>'
       +(loading?'<button class="btn pri sm" disabled><span class="spin" style="width:14px;height:14px;border-width:2px;margin:0"></span></button>':'<button class="btn pri sm" style="flex-shrink:0" onclick="saveProno(\''+ m.id+'\')">✓ Valider</button>')
@@ -646,6 +647,73 @@ function rPseudo(){
   return`<div class="login-page"><div class="login-logo">👤</div><div class="login-brand">Ton <span>pseudo</span></div><div class="login-sub">Il sera affiché dans le classement<br>et ne pourra pas être changé !</div><div class="login-card">${S.err?`<div class="err-msg">${S.err}</div>`:''}<div class="fg"><label>Choisis ton pseudo</label><input type="text" id="ips" placeholder="Ex: Zizou, Mbappé..." maxlength="20" onkeydown="if(event.key==='Enter')chkPseudo()" autofocus/></div>${S.loading?`<button class="btn pri" style="width:100%;padding:14px" disabled><span class="spin"></span>Vérification...</button>`:`<button class="btn pri" style="width:100%;padding:14px;font-size:15px" onclick="chkPseudo()">C'est parti ⚽</button>`}<button class="btn ghost" style="width:100%;margin-top:8px;padding:10px" onclick="S.step='login';S.err=null;localStorage.removeItem('wc_ok');render()">← Retour</button></div></div>`;
 }
 
+
+function openTeam(name){S.team=name;render();}
+function closeTeam(){S.team=null;render();}
+
+function rTeam(){
+  const name=S.team;
+  const matches=M.filter(m=>m.t1===name||m.t2===name).sort((a,b)=>a.date.localeCompare(b.date)||a.time.localeCompare(b.time));
+  const played=matches.filter(m=>status(m)==='played');
+  const upcoming=matches.filter(m=>status(m)!=='played');
+  let w=0,d=0,l=0,gf=0,ga=0;
+  for(const m of played){
+    const r=S.results[m.id];
+    if(!r) continue;
+    const isHome=m.t1===name;
+    const gs=isHome?r.s1:r.s2, gc=isHome?r.s2:r.s1;
+    gf+=gs; ga+=gc;
+    if(gs>gc) w++; else if(gs===gc) d++; else l++;
+  }
+  const playedRows=played.map(m=>{
+    const r=S.results[m.id];
+    const isHome=m.t1===name;
+    const opp=isHome?m.t2:m.t1;
+    const score=r?(isHome?r.s1+'-'+r.s2:r.s2+'-'+r.s1):'?-?';
+    const gs=r?(isHome?r.s1:r.s2):null, gc=r?(isHome?r.s2:r.s1):null;
+    const res=r?(gs>gc?'V':gs===gc?'N':'D'):'-';
+    const resColor=res==='V'?'var(--neon)':res==='N'?'var(--yellow)':'var(--red)';
+    const dateStr=new Date(m.date+'T12:00:00').toLocaleDateString('fr-FR',{day:'numeric',month:'short'});
+    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--border)">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:11px;font-weight:700;color:${resColor};width:16px">${res}</span>
+        <span style="font-size:13px">${ff(opp)} ${opp}</span>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:14px;font-weight:800;color:var(--text)">${score}</div>
+        <div style="font-size:10px;color:var(--muted)">${dateStr}</div>
+      </div>
+    </div>`;
+  }).join('');
+  const upcomingRows=upcoming.map(m=>{
+    const opp=m.t1===name?m.t2:m.t1;
+    const dateStr=new Date(m.date+'T12:00:00').toLocaleDateString('fr-FR',{day:'numeric',month:'short'});
+    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--border);opacity:.6">
+      <div style="font-size:13px">${ff(opp)} ${opp}</div>
+      <div style="text-align:right">
+        <div style="font-size:11px;font-weight:700;color:var(--muted)">À venir</div>
+        <div style="font-size:10px;color:var(--muted)">${dateStr} · ${m.time}</div>
+      </div>
+    </div>`;
+  }).join('');
+  return `<div class="app">
+    <div class="hdr">
+      <button class="btn ghost sm" onclick="closeTeam()">← Retour</button>
+      <div style="font-size:16px;font-weight:800">${ff(name)} ${name}</div>
+      <div style="width:60px"></div>
+    </div>
+    <div style="margin:16px 16px 0;display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
+      <div class="stat"><div class="stat-val" style="color:var(--neon)">${w}</div><div class="stat-lbl">V</div></div>
+      <div class="stat"><div class="stat-val" style="color:var(--yellow)">${d}</div><div class="stat-lbl">N</div></div>
+      <div class="stat"><div class="stat-val" style="color:var(--red)">${l}</div><div class="stat-lbl">D</div></div>
+      <div class="stat"><div class="stat-val">${gf}-${ga}</div><div class="stat-lbl">Buts</div></div>
+    </div>
+    ${played.length?`<div style="margin:16px 16px 4px;font-size:11px;font-weight:700;color:var(--muted2);text-transform:uppercase;letter-spacing:.07em">Matchs joués</div>
+    <div style="margin:0 16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden">${playedRows}</div>`:''}
+    ${upcoming.length?`<div style="margin:16px 16px 4px;font-size:11px;font-weight:700;color:var(--muted2);text-transform:uppercase;letter-spacing:.07em">Prochains matchs</div>
+    <div style="margin:0 16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden">${upcomingRows}</div>`:''}
+  </div>`;
+}
 
 function toggleAcc(id){
   if(!S.accOpen) S.accOpen={};
