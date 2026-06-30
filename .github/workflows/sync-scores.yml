@@ -242,7 +242,7 @@ jobs:
             const existing = await atFetch('GET', 'Resultats?pageSize=100');
             const existingMap = {};
             for (const r of (existing.records || [])) {
-              existingMap[r.fields.MatchId] = { id: r.id, s1: r.fields.Score1, s2: r.fields.Score2 };
+              existingMap[r.fields.MatchId] = { id: r.id, s1: r.fields.Score1, s2: r.fields.Score2, tab1: r.fields.TAB1, tab2: r.fields.TAB2 };
             }
 
             let pronos = [], off = '';
@@ -271,25 +271,32 @@ jobs:
               const score2 = match.score?.fullTime?.away;
               if (score1 === null || score1 === undefined || score2 === null || score2 === undefined) continue;
 
+              const pen1 = match.score?.penalties?.home;
+              const pen2 = match.score?.penalties?.away;
+              const hasPenalties = pen1 !== null && pen1 !== undefined && pen2 !== null && pen2 !== undefined;
+
               const s1 = entry.swapped ? score2 : score1;
               const s2 = entry.swapped ? score1 : score2;
+              const tab1 = hasPenalties ? (entry.swapped ? pen2 : pen1) : null;
+              const tab2 = hasPenalties ? (entry.swapped ? pen1 : pen2) : null;
               const matchId = entry.mid;
 
               const prev = existingMap[matchId];
-              if (prev && prev.s1 === s1 && prev.s2 === s2) continue;
+              if (prev && prev.s1 === s1 && prev.s2 === s2 && prev.tab1 === tab1 && prev.tab2 === tab2) continue;
 
-              console.log(`${matchId}: ${home} ${s1}-${s2} ${away}`);
+              console.log(`${matchId}: ${home} ${s1}-${s2} ${away}${hasPenalties ? ` (TAB ${tab1}-${tab2})` : ''}`);
+
+              const fields = { MatchId: matchId, Score1: s1, Score2: s2 };
+              if (hasPenalties) { fields.TAB1 = tab1; fields.TAB2 = tab2; }
 
               if (prev) {
-                await atFetch('PATCH', `Resultats/${prev.id}`, {
-                  fields: { MatchId: matchId, Score1: s1, Score2: s2 }
-                });
+                await atFetch('PATCH', `Resultats/${prev.id}`, { fields });
                 updated++;
               } else {
                 const created_rec = await atFetch('POST', 'Resultats', {
-                  records: [{ fields: { MatchId: matchId, Score1: s1, Score2: s2 } }]
+                  records: [{ fields }]
                 });
-                existingMap[matchId] = { id: created_rec.records?.[0]?.id, s1, s2 };
+                existingMap[matchId] = { id: created_rec.records?.[0]?.id, s1, s2, tab1, tab2 };
                 created++;
               }
 
