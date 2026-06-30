@@ -66,6 +66,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .team-name{font-size:12px;font-weight:700;color:var(--text);text-align:center;line-height:1.2}
 .vsblock{min-width:72px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px}
 .score-live{font-size:28px;font-weight:900;letter-spacing:1px;color:var(--neon);text-shadow:0 0 20px var(--neon-dim)}
+.score-tab{font-size:11px;font-weight:700;color:var(--muted);text-align:center;margin-top:2px}
 .vs-txt{font-size:11px;font-weight:700;color:var(--muted)}
 .mcard-venue{font-size:10px;color:var(--muted);text-align:center;padding-bottom:4px}
 .mcard-prono{border-top:1px solid var(--border);padding:10px 14px;display:flex;align-items:center;gap:8px;background:var(--surface2)}
@@ -355,7 +356,7 @@ async function loadAll(){
     for(const r of recs){ const f=r.fields; if(!S.pronos[f.MatchId])S.pronos[f.MatchId]={}; S.pronos[f.MatchId][f.Pseudo]={s1:f.Score1,s2:f.Score2,pts:f.Points||0,rid:r.id}; }
     const rd=await at('GET','Resultats?pageSize=100');
     S.results={};
-    for(const r of (rd.records||[])){ const f=r.fields; S.results[f.MatchId]={s1:f.Score1,s2:f.Score2,rid:r.id}; }
+    for(const r of (rd.records||[])){ const f=r.fields; S.results[f.MatchId]={s1:f.Score1,s2:f.Score2,tab1:f.TAB1,tab2:f.TAB2,rid:r.id}; }
     buildLB();
   } catch(e){ toast(e.message,'e'); }
   S.loading=false; render();
@@ -489,7 +490,8 @@ function rCard(m){
   // Editing mode : soit pas de prono, soit en train de modifier
   const editing=S.editing===m.id;
   const badge=tod&&st==='open'?'<span class="badge b-today">🔥 AUJOURD\'HUI</span>':st==='open'?'<span class="badge b-open">● OUVERT</span>':st==='closed'?'<span class="badge b-closed">🔒 CLÔTURÉ</span>':'<span class="badge b-played">✓ TERMINÉ</span>';
-  const vsB=res?`<div class="score-live">${res.s1}-${res.s2}</div>`:`<div class="vs-txt">VS</div>`;
+  const tabTxt=(res&&res.tab1!=null&&res.tab2!=null)?`<div class="score-tab">TAB ${res.tab1}-${res.tab2}</div>`:'';
+  const vsB=res?`<div class="score-live">${res.s1}-${res.s2}</div>${tabTxt}`:`<div class="vs-txt">VS</div>`;
 
   let pronoZone='';
   if(st==='open'){
