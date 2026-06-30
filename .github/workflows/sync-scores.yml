@@ -267,8 +267,8 @@ jobs:
               }
               matched++;
 
-              const score1 = match.score?.fullTime?.home;
-              const score2 = match.score?.fullTime?.away;
+              const score1 = match.score?.regularTime?.home ?? match.score?.fullTime?.home;
+              const score2 = match.score?.regularTime?.away ?? match.score?.fullTime?.away;
               if (score1 === null || score1 === undefined || score2 === null || score2 === undefined) continue;
 
               const pen1 = match.score?.penalties?.home;
