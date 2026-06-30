@@ -159,6 +159,22 @@ jobs:
             m070: ['Panama', 'Croatia'],
             m071: ['Panama', 'England'],
             m072: ['Croatia', 'Ghana'],
+            m073: ['South Africa', 'Canada'],
+            m074: ['Brazil', 'Japan'],
+            m075: ['Germany', 'Paraguay'],
+            m076: ['Netherlands', 'Morocco'],
+            m077: ['Ivory Coast', 'Norway'],
+            m078: ['France', 'Sweden'],
+            m079: ['Mexico', 'Ecuador'],
+            m080: ['England', 'DR Congo'],
+            m081: ['Belgium', 'Senegal'],
+            m082: ['United States', 'Bosnia and Herzegovina'],
+            m083: ['Spain', 'Austria'],
+            m084: ['Portugal', 'Croatia'],
+            m085: ['Switzerland', 'Algeria'],
+            m086: ['Australia', 'Egypt'],
+            m087: ['Argentina', 'Cape Verde'],
+            m088: ['Colombia', 'Ghana'],
           };
 
           const INDEX = {};
