@@ -267,16 +267,20 @@ jobs:
               }
               matched++;
 
-              const score1 = match.score?.regularTime?.home ?? match.score?.fullTime?.home;
-              const score2 = match.score?.regularTime?.away ?? match.score?.fullTime?.away;
+              const score1 = match.score?.fullTime?.home;
+              const score2 = match.score?.fullTime?.away;
               if (score1 === null || score1 === undefined || score2 === null || score2 === undefined) continue;
 
               const pen1 = match.score?.penalties?.home;
               const pen2 = match.score?.penalties?.away;
               const hasPenalties = pen1 !== null && pen1 !== undefined && pen2 !== null && pen2 !== undefined;
 
-              const s1 = entry.swapped ? score2 : score1;
-              const s2 = entry.swapped ? score1 : score2;
+              // Score affiché = regularTime si TAB (pour montrer 1-1), sinon fullTime (pour prolongation 3-2)
+              const displayScore1 = hasPenalties ? (match.score?.regularTime?.home ?? score1) : score1;
+              const displayScore2 = hasPenalties ? (match.score?.regularTime?.away ?? score2) : score2;
+
+              const s1 = entry.swapped ? displayScore2 : displayScore1;
+              const s2 = entry.swapped ? displayScore1 : displayScore2;
               const tab1 = hasPenalties ? (entry.swapped ? pen2 : pen1) : null;
               const tab2 = hasPenalties ? (entry.swapped ? pen1 : pen2) : null;
               const matchId = entry.mid;
