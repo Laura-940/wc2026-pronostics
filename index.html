@@ -268,27 +268,30 @@ const M=[
   {id:'m087',g:'16e',date:'2026-07-04',time:'00:00',t1:'Argentine',t2:'Cap-Vert',v:'Miami'},
   {id:'m088',g:'16e',date:'2026-07-04',time:'03:30',t1:'Colombie',t2:'Ghana',v:'Dallas'},
   // ─── QUARTS ─────────────────────────────────────────────────
-  {id:'m089',g:'🔥',date:'2026-07-08',time:'19:00',t1:'W73',t2:'W74',v:'TBD'},
-  {id:'m090',g:'🔥',date:'2026-07-08',time:'23:00',t1:'W75',t2:'W76',v:'TBD'},
-  {id:'m091',g:'🔥',date:'2026-07-09',time:'03:00',t1:'W77',t2:'W78',v:'TBD'},
-  {id:'m092',g:'🔥',date:'2026-07-09',time:'19:00',t1:'W79',t2:'W80',v:'TBD'},
-  {id:'m093',g:'🔥',date:'2026-07-09',time:'23:00',t1:'W81',t2:'W82',v:'TBD'},
-  {id:'m094',g:'🔥',date:'2026-07-10',time:'03:00',t1:'W83',t2:'W84',v:'TBD'},
-  {id:'m095',g:'🔥',date:'2026-07-10',time:'19:00',t1:'W85',t2:'W86',v:'TBD'},
-  {id:'m096',g:'🔥',date:'2026-07-10',time:'23:00',t1:'W87',t2:'W88',v:'TBD'},
+  {id:'m089',g:'8e',date:'2026-07-05',time:'22:00',t1:'Paraguay',t2:'France',v:'Philadelphia'},
+  {id:'m090',g:'8e',date:'2026-07-05',time:'19:00',t1:'Canada',t2:'Maroc',v:'Houston'},
+  {id:'m091',g:'8e',date:'2026-07-06',time:'21:00',t1:'Brésil',t2:'Norvège',v:'New York'},
+  {id:'m092',g:'8e',date:'2026-07-06',time:'02:00',t1:'Mexique',t2:'Angleterre',v:'Mexico City'},
+  {id:'m093',g:'8e',date:'2026-07-07',time:'20:00',t1:'Portugal',t2:'Espagne',v:'Dallas'},
+  {id:'m094',g:'8e',date:'2026-07-07',time:'23:00',t1:'États-Unis',t2:'Belgique',v:'Seattle'},
+  {id:'m095',g:'8e',date:'2026-07-08',time:'18:00',t1:'Argentine',t2:'Égypte',v:'Atlanta'},
+  {id:'m096',g:'8e',date:'2026-07-08',time:'21:00',t1:'Suisse',t2:'Colombie',v:'Vancouver'},
+  // ─── QUARTS DE FINALE ───────────────────────────────────────
+  {id:'m097',g:'🔥',date:'2026-07-09',time:'22:00',t1:'W89',t2:'W90',v:'TBD'},
+  {id:'m098',g:'🔥',date:'2026-07-10',time:'02:00',t1:'W91',t2:'W92',v:'TBD'},
+  {id:'m099',g:'🔥',date:'2026-07-10',time:'20:00',t1:'W93',t2:'W94',v:'TBD'},
+  {id:'m100',g:'🔥',date:'2026-07-11',time:'00:00',t1:'W95',t2:'W96',v:'TBD'},
   // ─── DEMI-FINALES ───────────────────────────────────────────
-  {id:'m097',g:'💥',date:'2026-07-14',time:'21:00',t1:'W89',t2:'W90',v:'Dallas'},
-  {id:'m098',g:'💥',date:'2026-07-15',time:'01:00',t1:'W91',t2:'W92',v:'Atlanta'},
-  {id:'m099',g:'💥',date:'2026-07-15',time:'21:00',t1:'W93',t2:'W94',v:'Los Angeles'},
-  {id:'m100',g:'💥',date:'2026-07-16',time:'01:00',t1:'W95',t2:'W96',v:'Miami'},
+  {id:'m101',g:'💥',date:'2026-07-14',time:'21:00',t1:'W97',t2:'W98',v:'Dallas'},
+  {id:'m102',g:'💥',date:'2026-07-15',time:'21:00',t1:'W99',t2:'W100',v:'Los Angeles'},
   // ─── PETITE FINALE ──────────────────────────────────────────
-  {id:'m101',g:'3e',date:'2026-07-18',time:'21:00',t1:'L97',t2:'L99',v:'Miami'},
+  {id:'m103',g:'3e',date:'2026-07-18',time:'21:00',t1:'L101',t2:'L102',v:'Miami'},
   // ─── FINALE ─────────────────────────────────────────────────
-  {id:'m102',g:'🏆',date:'2026-07-19',time:'21:00',t1:'W97',t2:'W98',v:'New York/New Jersey'},
+  {id:'m104',g:'🏆',date:'2026-07-19',time:'21:00',t1:'W101',t2:'W102',v:'New York/New Jersey'},
 ];
 
-const GL={'16e':'16es de finale','🔥':'Quarts','💥':'Demi-finales','3e':'Petite finale','🏆':'Finale 🏆'};
-const GROUPS=['A','B','C','D','E','F','G','H','I','J','K','L','16e','🔥','💥','3e','🏆'];
+const GL={'16e':'16es de finale','8e':'8èmes de finale','🔥':'Quarts de finale','💥':'Demi-finales','3e':'Petite finale','🏆':'Finale 🏆'};
+const GROUPS=['A','B','C','D','E','F','G','H','I','J','K','L','16e','8e','🔥','💥','3e','🏆'];
 const rl=g=>GL[g]||'Groupe '+g;
 
 const LS=k=>localStorage.getItem(k)||'';
