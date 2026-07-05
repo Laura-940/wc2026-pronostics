@@ -175,6 +175,14 @@ jobs:
             m086: ['Australia', 'Egypt'],
             m087: ['Argentina', 'Cape Verde'],
             m088: ['Colombia', 'Ghana'],
+            m089: ['Paraguay', 'France'],
+            m090: ['Canada', 'Morocco'],
+            m091: ['Brazil', 'Norway'],
+            m092: ['Mexico', 'England'],
+            m093: ['Portugal', 'Spain'],
+            m094: ['United States', 'Belgium'],
+            m095: ['Argentina', 'Egypt'],
+            m096: ['Switzerland', 'Colombia'],
           };
 
           const INDEX = {};
