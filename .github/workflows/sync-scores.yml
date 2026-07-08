@@ -8,12 +8,16 @@ on:
 jobs:
   sync:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Sync World Cup scores to Airtable
         env:
           FOOTBALL_TOKEN: ${{ secrets.FOOTBALL_DATA_TOKEN }}
           AIRTABLE_TOKEN: ${{ secrets.AIRTABLE_TOKEN }}
           BASE_ID: app6kZ7JVeTWarmFR
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
         run: |
           node << 'EOF'
           const https = require('https');
@@ -183,6 +187,24 @@ jobs:
             m094: ['United States', 'Belgium'],
             m095: ['Argentina', 'Egypt'],
             m096: ['Switzerland', 'Colombia'],
+            m097: ['France', 'Morocco'],
+            m098: ['Spain', 'Belgium'],
+            m099: ['Norway', 'England'],
+            m100: ['Argentina', 'Switzerland'],
+            m101: ['W97', 'W98'],
+            m102: ['W99', 'W100'],
+            m103: ['L101', 'L102'],
+            m104: ['W101', 'W102'],
+          };
+
+          // Mapping des qualifications
+          const ADVANCEMENT = {
+            m097: { winner: ['m101','t1'], loser: null },
+            m098: { winner: ['m101','t2'], loser: null },
+            m099: { winner: ['m102','t1'], loser: null },
+            m100: { winner: ['m102','t2'], loser: null },
+            m101: { winner: ['m104','t1'], loser: ['m103','t1'] },
+            m102: { winner: ['m104','t2'], loser: ['m103','t2'] },
           };
 
           const INDEX = {};
@@ -325,6 +347,98 @@ jobs:
                   pointsUpdated++;
                   await sleep(250);
                 }
+              }
+            }
+
+            // Mise à jour automatique des équipes dans index.html
+            const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
+            const REPO = process.env.GITHUB_REPOSITORY;
+            if (GITHUB_TOKEN && REPO) {
+              // Récupère index.html depuis GitHub
+              const ghFetch = (method, path, body) => new Promise((resolve, reject) => {
+                const data = body ? JSON.stringify(body) : null;
+                const opts = {
+                  hostname: 'api.github.com',
+                  path,
+                  method,
+                  headers: {
+                    'Authorization': `Bearer ${GITHUB_TOKEN}`,
+                    'Accept': 'application/vnd.github.v3+json',
+                    'User-Agent': 'sync-scores-bot',
+                    'Content-Type': 'application/json',
+                    ...(data ? { 'Content-Length': Buffer.byteLength(data) } : {})
+                  }
+                };
+                const req = https.request(opts, res => {
+                  let d = '';
+                  res.on('data', chunk => d += chunk);
+                  res.on('end', () => { try { resolve(JSON.parse(d)); } catch(e){ resolve({}); } });
+                });
+                req.on('error', reject);
+                if (data) req.write(data);
+                req.end();
+              });
+
+              const fileRes = await ghFetch('GET', `/repos/${REPO}/contents/index.html`);
+              let htmlContent = Buffer.from(fileRes.content, 'base64').toString('utf8');
+              const fileSha = fileRes.sha;
+              let htmlChanged = false;
+
+              // Pour chaque match avec avancement, calcule gagnant/perdant
+              for (const [mid, adv] of Object.entries(ADVANCEMENT)) {
+                const r = existingMap[mid];
+                if (!r || r.s1 === undefined || r.s2 === undefined) continue;
+                const matchDef = MATCHES[mid];
+                if (!matchDef) continue;
+
+                // Récupère les vrais noms depuis index.html (t1/t2 du match)
+                const matchLine = htmlContent.match(new RegExp(`id:'${mid}'[^}]+t1:'([^']+)'[^}]+t2:'([^']+)'`));
+                if (!matchLine) continue;
+                const team1 = matchLine[1];
+                const team2 = matchLine[2];
+                if (team1.startsWith('W') || team1.startsWith('L') || team2.startsWith('W') || team2.startsWith('L')) continue;
+
+                const winner = r.s1 > r.s2 ? team1 : r.s1 < r.s2 ? team2 : null;
+                const loser = r.s1 > r.s2 ? team2 : r.s1 < r.s2 ? team1 : null;
+
+                // En cas de TAB, le gagnant est celui avec le plus de tirs au but
+                const finalWinner = winner || (r.tab1 !== null && r.tab1 !== undefined ? (r.tab1 > r.tab2 ? team1 : team2) : null);
+                const finalLoser = loser || (r.tab1 !== null && r.tab1 !== undefined ? (r.tab1 > r.tab2 ? team2 : team1) : null);
+
+                if (adv.winner && finalWinner) {
+                  const slot = adv.winner[0] + '_' + adv.winner[1];
+                  const placeholder = adv.winner[1] === 't1' ? `t1:'W${mid.slice(1)}'` : `t2:'W${mid.slice(1)}'`;
+                  if (htmlContent.includes(placeholder)) {
+                    const regex = new RegExp(`(id:'${adv.winner[0]}'[^}]+${adv.winner[1]}:)'W${mid.slice(1)}'`);
+                    const newHtml = htmlContent.replace(regex, `$1'${finalWinner}'`);
+                    if (newHtml !== htmlContent) {
+                      htmlContent = newHtml;
+                      htmlChanged = true;
+                      console.log(`Auto-update: ${slot} = ${finalWinner}`);
+                    }
+                  }
+                }
+                if (adv.loser && finalLoser) {
+                  const regex = new RegExp(`(id:'${adv.loser[0]}'[^}]+${adv.loser[1]}:)'L${mid.slice(1)}'`);
+                  const newHtml = htmlContent.replace(regex, `$1'${finalLoser}'`);
+                  if (newHtml !== htmlContent) {
+                    htmlContent = newHtml;
+                    htmlChanged = true;
+                    console.log(`Auto-update loser: ${adv.loser[0]}_${adv.loser[1]} = ${finalLoser}`);
+                  }
+                }
+              }
+
+              if (htmlChanged) {
+                const encoded = Buffer.from(htmlContent).toString('base64');
+                await ghFetch('PUT', `/repos/${REPO}/contents/index.html`, {
+                  message: 'Auto-update: equipes phases finales',
+                  content: encoded,
+                  sha: fileSha
+                });
+                console.log('index.html mis a jour automatiquement !');
+              } else {
+                console.log('Aucune mise a jour des equipes necessaire.');
               }
             }
 
