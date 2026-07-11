@@ -391,11 +391,10 @@ jobs:
                 const matchDef = MATCHES[mid];
                 if (!matchDef) continue;
 
-                // Récupère les vrais noms depuis index.html (t1/t2 du match)
-                const matchLine = htmlContent.match(new RegExp(`id:'${mid}'[^}]+t1:'([^']+)'[^}]+t2:'([^']+)'`));
-                if (!matchLine) continue;
-                const team1 = matchLine[1];
-                const team2 = matchLine[2];
+                // Récupère les vrais noms depuis existingMap et MATCHES
+                const team1 = MATCHES[mid]?.[0];
+                const team2 = MATCHES[mid]?.[1];
+                if (!team1 || !team2) continue;
                 if (team1.startsWith('W') || team1.startsWith('L') || team2.startsWith('W') || team2.startsWith('L')) continue;
 
                 const winner = r.s1 > r.s2 ? team1 : r.s1 < r.s2 ? team2 : null;
