@@ -398,18 +398,17 @@ jobs:
                 const matchDef = MATCHES[mid];
                 if (!matchDef) continue;
 
-                // Récupère les vrais noms depuis existingMap et MATCHES
                 const team1 = MATCHES[mid]?.[0];
                 const team2 = MATCHES[mid]?.[1];
+                console.log(`${mid}: team1=${team1} team2=${team2} s1=${r.s1} s2=${r.s2}`);
                 if (!team1 || !team2) continue;
-                if (team1.startsWith('W') || team1.startsWith('L') || team2.startsWith('W') || team2.startsWith('L')) continue;
+                if (team1.startsWith('W') || team1.startsWith('L') || team2.startsWith('W') || team2.startsWith('L')) { console.log(`Skip ${mid}: placeholder team`); continue; }
 
                 const winner = r.s1 > r.s2 ? team1 : r.s1 < r.s2 ? team2 : null;
                 const loser = r.s1 > r.s2 ? team2 : r.s1 < r.s2 ? team1 : null;
-
-                // En cas de TAB, le gagnant est celui avec le plus de tirs au but
-                const finalWinner = winner || (r.tab1 !== null && r.tab1 !== undefined ? (r.tab1 > r.tab2 ? team1 : team2) : null);
-                const finalLoser = loser || (r.tab1 !== null && r.tab1 !== undefined ? (r.tab1 > r.tab2 ? team2 : team1) : null);
+                const finalWinner = winner || (r.tab1 != null ? (r.tab1 > r.tab2 ? team1 : team2) : null);
+                const finalLoser = loser || (r.tab1 != null ? (r.tab1 > r.tab2 ? team2 : team1) : null);
+                console.log(`${mid}: winner=${finalWinner} loser=${finalLoser}`);
 
               if (adv.winner && finalWinner) {
                 const [targetMatch, targetTeam] = adv.winner;
