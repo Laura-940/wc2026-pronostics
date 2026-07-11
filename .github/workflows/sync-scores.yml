@@ -405,28 +405,34 @@ jobs:
                 const finalWinner = winner || (r.tab1 !== null && r.tab1 !== undefined ? (r.tab1 > r.tab2 ? team1 : team2) : null);
                 const finalLoser = loser || (r.tab1 !== null && r.tab1 !== undefined ? (r.tab1 > r.tab2 ? team2 : team1) : null);
 
-                if (adv.winner && finalWinner) {
-                  const slot = adv.winner[0] + '_' + adv.winner[1];
-                  const placeholder = adv.winner[1] === 't1' ? `t1:'W${mid.slice(1)}'` : `t2:'W${mid.slice(1)}'`;
-                  if (htmlContent.includes(placeholder)) {
-                    const regex = new RegExp(`(id:'${adv.winner[0]}'[^}]+${adv.winner[1]}:)'W${mid.slice(1)}'`);
-                    const newHtml = htmlContent.replace(regex, `$1'${finalWinner}'`);
-                    if (newHtml !== htmlContent) {
-                      htmlContent = newHtml;
-                      htmlChanged = true;
-                      console.log(`Auto-update: ${slot} = ${finalWinner}`);
-                    }
-                  }
+              if (adv.winner && finalWinner) {
+                const [targetMatch, targetTeam] = adv.winner;
+                const placeholder = `t1:'W${mid.slice(1)}'`;
+                const placeholder2 = `t2:'W${mid.slice(1)}'`;
+                if (targetTeam === 't1' && htmlContent.includes(placeholder)) {
+                  htmlContent = htmlContent.replace(placeholder, `t1:'${finalWinner}'`);
+                  htmlChanged = true;
+                  console.log(`Auto-update: ${targetMatch} t1 = ${finalWinner}`);
+                } else if (targetTeam === 't2' && htmlContent.includes(placeholder2)) {
+                  htmlContent = htmlContent.replace(placeholder2, `t2:'${finalWinner}'`);
+                  htmlChanged = true;
+                  console.log(`Auto-update: ${targetMatch} t2 = ${finalWinner}`);
                 }
-                if (adv.loser && finalLoser) {
-                  const regex = new RegExp(`(id:'${adv.loser[0]}'[^}]+${adv.loser[1]}:)'L${mid.slice(1)}'`);
-                  const newHtml = htmlContent.replace(regex, `$1'${finalLoser}'`);
-                  if (newHtml !== htmlContent) {
-                    htmlContent = newHtml;
-                    htmlChanged = true;
-                    console.log(`Auto-update loser: ${adv.loser[0]}_${adv.loser[1]} = ${finalLoser}`);
-                  }
+              }
+              if (adv.loser && finalLoser) {
+                const [targetMatch, targetTeam] = adv.loser;
+                const placeholder = `t1:'L${mid.slice(1)}'`;
+                const placeholder2 = `t2:'L${mid.slice(1)}'`;
+                if (targetTeam === 't1' && htmlContent.includes(placeholder)) {
+                  htmlContent = htmlContent.replace(placeholder, `t1:'${finalLoser}'`);
+                  htmlChanged = true;
+                  console.log(`Auto-update loser: ${targetMatch} t1 = ${finalLoser}`);
+                } else if (targetTeam === 't2' && htmlContent.includes(placeholder2)) {
+                  htmlContent = htmlContent.replace(placeholder2, `t2:'${finalLoser}'`);
+                  htmlChanged = true;
+                  console.log(`Auto-update loser: ${targetMatch} t2 = ${finalLoser}`);
                 }
+              }
               }
 
               if (htmlChanged) {
