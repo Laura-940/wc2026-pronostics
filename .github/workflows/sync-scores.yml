@@ -412,8 +412,9 @@ jobs:
 
               if (adv.winner && finalWinner) {
                 const [targetMatch, targetTeam] = adv.winner;
-                const placeholder = `t1:'W${mid.slice(1)}'`;
-                const placeholder2 = `t2:'W${mid.slice(1)}'`;
+                const num = parseInt(mid.slice(1));
+                const placeholder = `t1:'W${num}'`;
+                const placeholder2 = `t2:'W${num}'`;
                 console.log(`Trying to replace: targetTeam=${targetTeam} placeholder=${placeholder} found=${htmlContent.includes(placeholder)}`);
                 if (targetTeam === 't1' && htmlContent.includes(placeholder)) {
                   htmlContent = htmlContent.replace(placeholder, `t1:'${finalWinner}'`);
@@ -427,8 +428,9 @@ jobs:
               }
               if (adv.loser && finalLoser) {
                 const [targetMatch, targetTeam] = adv.loser;
-                const placeholder = `t1:'L${mid.slice(1)}'`;
-                const placeholder2 = `t2:'L${mid.slice(1)}'`;
+                const num = parseInt(mid.slice(1));
+                const placeholder = `t1:'L${num}'`;
+                const placeholder2 = `t2:'L${num}'`;
                 if (targetTeam === 't1' && htmlContent.includes(placeholder)) {
                   htmlContent = htmlContent.replace(placeholder, `t1:'${finalLoser}'`);
                   htmlChanged = true;
