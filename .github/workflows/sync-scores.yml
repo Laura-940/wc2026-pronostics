@@ -384,6 +384,9 @@ jobs:
               const fileSha = fileRes.sha;
               let htmlChanged = false;
 
+              console.log('W97 in html:', htmlContent.includes("W97"));
+              console.log('W98 in html:', htmlContent.includes("W98"));
+
               console.log('Checking advancement for:', Object.keys(ADVANCEMENT).join(', '));
               console.log('existingMap keys:', Object.keys(existingMap).filter(k => ['m097','m098','m099','m100','m101','m102'].includes(k)).join(', '));
 
