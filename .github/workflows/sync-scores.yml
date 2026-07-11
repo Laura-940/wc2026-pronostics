@@ -414,6 +414,7 @@ jobs:
                 const [targetMatch, targetTeam] = adv.winner;
                 const placeholder = `t1:'W${mid.slice(1)}'`;
                 const placeholder2 = `t2:'W${mid.slice(1)}'`;
+                console.log(`Trying to replace: targetTeam=${targetTeam} placeholder=${placeholder} found=${htmlContent.includes(placeholder)}`);
                 if (targetTeam === 't1' && htmlContent.includes(placeholder)) {
                   htmlContent = htmlContent.replace(placeholder, `t1:'${finalWinner}'`);
                   htmlChanged = true;
