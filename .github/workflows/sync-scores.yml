@@ -197,7 +197,13 @@ jobs:
             m104: ['W101', 'W102'],
           };
 
-          // Mapping des qualifications
+          // Traduction anglais -> français pour l'affichage dans l'HTML
+          const FR_NAMES = {
+            'France': 'France', 'Morocco': 'Maroc', 'Spain': 'Espagne',
+            'Belgium': 'Belgique', 'Norway': 'Norvège', 'England': 'Angleterre',
+            'Argentina': 'Argentine', 'Switzerland': 'Suisse',
+          };
+
           const ADVANCEMENT = {
             m097: { winner: ['m101','t1'], loser: null },
             m098: { winner: ['m101','t2'], loser: null },
@@ -408,37 +414,39 @@ jobs:
                 const loser = r.s1 > r.s2 ? team2 : r.s1 < r.s2 ? team1 : null;
                 const finalWinner = winner || (r.tab1 != null ? (r.tab1 > r.tab2 ? team1 : team2) : null);
                 const finalLoser = loser || (r.tab1 != null ? (r.tab1 > r.tab2 ? team2 : team1) : null);
-                console.log(`${mid}: winner=${finalWinner} loser=${finalLoser}`);
+                const frWinner = finalWinner ? (FR_NAMES[finalWinner] || finalWinner) : null;
+                const frLoser = finalLoser ? (FR_NAMES[finalLoser] || finalLoser) : null;
+                console.log(`${mid}: winner=${frWinner} loser=${frLoser}`);
 
-              if (adv.winner && finalWinner) {
+              if (adv.winner && frWinner) {
                 const [targetMatch, targetTeam] = adv.winner;
                 const num = parseInt(mid.slice(1));
                 const placeholder = `t1:'W${num}'`;
                 const placeholder2 = `t2:'W${num}'`;
                 console.log(`Trying to replace: targetTeam=${targetTeam} placeholder=${placeholder} found=${htmlContent.includes(placeholder)}`);
                 if (targetTeam === 't1' && htmlContent.includes(placeholder)) {
-                  htmlContent = htmlContent.replace(placeholder, `t1:'${finalWinner}'`);
+                  htmlContent = htmlContent.replace(placeholder, `t1:'${frWinner}'`);
                   htmlChanged = true;
-                  console.log(`Auto-update: ${targetMatch} t1 = ${finalWinner}`);
+                  console.log(`Auto-update: ${targetMatch} t1 = ${frWinner}`);
                 } else if (targetTeam === 't2' && htmlContent.includes(placeholder2)) {
-                  htmlContent = htmlContent.replace(placeholder2, `t2:'${finalWinner}'`);
+                  htmlContent = htmlContent.replace(placeholder2, `t2:'${frWinner}'`);
                   htmlChanged = true;
-                  console.log(`Auto-update: ${targetMatch} t2 = ${finalWinner}`);
+                  console.log(`Auto-update: ${targetMatch} t2 = ${frWinner}`);
                 }
               }
-              if (adv.loser && finalLoser) {
+              if (adv.loser && frLoser) {
                 const [targetMatch, targetTeam] = adv.loser;
                 const num = parseInt(mid.slice(1));
                 const placeholder = `t1:'L${num}'`;
                 const placeholder2 = `t2:'L${num}'`;
                 if (targetTeam === 't1' && htmlContent.includes(placeholder)) {
-                  htmlContent = htmlContent.replace(placeholder, `t1:'${finalLoser}'`);
+                  htmlContent = htmlContent.replace(placeholder, `t1:'${frLoser}'`);
                   htmlChanged = true;
-                  console.log(`Auto-update loser: ${targetMatch} t1 = ${finalLoser}`);
+                  console.log(`Auto-update loser: ${targetMatch} t1 = ${frLoser}`);
                 } else if (targetTeam === 't2' && htmlContent.includes(placeholder2)) {
-                  htmlContent = htmlContent.replace(placeholder2, `t2:'${finalLoser}'`);
+                  htmlContent = htmlContent.replace(placeholder2, `t2:'${frLoser}'`);
                   htmlChanged = true;
-                  console.log(`Auto-update loser: ${targetMatch} t2 = ${finalLoser}`);
+                  console.log(`Auto-update loser: ${targetMatch} t2 = ${frLoser}`);
                 }
               }
               }
