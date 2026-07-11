@@ -384,10 +384,14 @@ jobs:
               const fileSha = fileRes.sha;
               let htmlChanged = false;
 
+              console.log('Checking advancement for:', Object.keys(ADVANCEMENT).join(', '));
+              console.log('existingMap keys:', Object.keys(existingMap).filter(k => ['m097','m098','m099','m100','m101','m102'].includes(k)).join(', '));
+
               // Pour chaque match avec avancement, calcule gagnant/perdant
               for (const [mid, adv] of Object.entries(ADVANCEMENT)) {
                 const r = existingMap[mid];
-                if (!r || r.s1 === undefined || r.s2 === undefined) continue;
+                console.log(`Checking ${mid}: r=${JSON.stringify(r)}`);
+                if (!r || r.s1 === undefined || r.s2 === undefined) { console.log(`Skip ${mid}: no result`); continue; }
                 const matchDef = MATCHES[mid];
                 if (!matchDef) continue;
 
