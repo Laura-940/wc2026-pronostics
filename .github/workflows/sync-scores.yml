@@ -191,10 +191,10 @@ jobs:
             m098: ['Spain', 'Belgium'],
             m099: ['Norway', 'England'],
             m100: ['Argentina', 'Switzerland'],
-            m101: ['W97', 'W98'],
-            m102: ['W99', 'W100'],
-            m103: ['L101', 'L102'],
-            m104: ['W101', 'W102'],
+            m101: ['France', 'Spain'],
+            m102: ['England', 'Argentina'],
+            m103: ['France', 'England'],
+            m104: ['Spain', 'Argentina'],
           };
 
           // Traduction anglais -> français pour l'affichage dans l'HTML
